@@ -1,0 +1,15 @@
+{
+  "cxxNamespace": ["nitroperf"],
+  "ios": {
+    "iosModuleName": "NitroPerf"
+  },
+  "android": {
+    "androidNamespace": ["nitroperf"],
+    "androidCxxLibName": "NitroPerf"
+  },
+  "autolinking": {
+    "PerfMonitor": {
+      "cpp": "HybridPerfMonitor"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+lib/
+build/
+.gradle/
+*.xcworkspace
+*.xcuserdata
+Pods/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+.env
+.DS_Store
+nitrogen/generated/

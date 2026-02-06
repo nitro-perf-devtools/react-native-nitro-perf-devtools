@@ -1,0 +1,36 @@
+{
+  "name": "nitro-perf-devtools",
+  "version": "0.1.0",
+  "description": "Rozenite DevTools plugin for react-native-nitro-perf — rich performance charts in your browser",
+  "main": "src/index.ts",
+  "files": [
+    "src",
+    "react-native.ts",
+    "rozenite.config.ts"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "rozenite",
+    "devtools",
+    "performance",
+    "react-native",
+    "fps"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@rozenite/plugin-bridge": "^1.2.0",
+    "recharts": "^2.15.0"
+  },
+  "devDependencies": {
+    "rozenite": "^1.2.0",
+    "@rozenite/vite-plugin": "^1.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.3.0"
+  },
+  "peerDependencies": {
+    "react-native-nitro-perf": "*"
+  }
+}

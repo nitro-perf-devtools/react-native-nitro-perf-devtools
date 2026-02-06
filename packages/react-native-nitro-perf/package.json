@@ -1,0 +1,57 @@
+{
+  "name": "react-native-nitro-perf",
+  "version": "0.1.0",
+  "description": "Hybrid performance monitor for React Native — UI FPS, JS FPS, RAM, heap, stutters via Nitro Modules",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
+  "react-native": "src/index.ts",
+  "source": "src/index.ts",
+  "files": [
+    "src",
+    "lib",
+    "cpp",
+    "ios",
+    "android",
+    "nitrogen",
+    "nitro.json",
+    "NitroPerf.podspec",
+    "!**/__tests__"
+  ],
+  "scripts": {
+    "codegen": "npx nitrogen",
+    "typecheck": "tsc --noEmit",
+    "build": "bob build",
+    "clean": "rm -rf lib nitrogen/generated"
+  },
+  "keywords": [
+    "react-native",
+    "performance",
+    "fps",
+    "monitor",
+    "nitro",
+    "profiler"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.73.0",
+    "react-native-nitro-modules": ">=0.19.0"
+  },
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-native": "^0.73.0",
+    "react-native-nitro-modules": "^0.19.0",
+    "react-native-builder-bob": "^0.23.0",
+    "typescript": "^5.3.0"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      ["typescript", { "project": "tsconfig.build.json" }]
+    ]
+  }
+}
