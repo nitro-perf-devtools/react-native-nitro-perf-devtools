@@ -33,6 +33,8 @@ WITH_ROZENITE=true npm start
 
 Then open DevTools and navigate to the **Performance** tab.
 
+![Rozenite DevTools Panel](/img/devtools-panel.png)
+
 ### Features
 
 The DevTools panel provides five tabs for comprehensive performance analysis:

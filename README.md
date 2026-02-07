@@ -123,6 +123,8 @@ interface PerfSnapshot {
 
 ## Rozenite DevTools
 
+<img alt="Rozenite DevTools Panel — performance score, FPS charts, memory usage, bottleneck analysis, and alerts" src="docs/static/img/devtools-panel.png" />
+
 For a rich browser-based debugging experience:
 
 ```tsx
