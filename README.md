@@ -26,18 +26,63 @@ RN Overlay    usePerfMetrics()     Rozenite DevTools
 2. **React hook** — `usePerfMetrics()` returns reactive performance state
 3. **Rozenite DevTools panel** — rich web charts (FPS line chart, memory area chart, stutter timeline)
 
-## Quick Start
+## Installation
+
+### 1. Install the package
 
 ```bash
-# Install
 npm install @nitroperf/core react-native-nitro-modules
+```
 
-# iOS
+or with Yarn:
+
+```bash
+yarn add @nitroperf/core react-native-nitro-modules
+```
+
+### 2. iOS setup
+
+```bash
 cd ios && pod install
+```
 
-# Optional: Rozenite DevTools panel
+Requires iOS 13+. The podspec (`NitroPerf.podspec`) is picked up automatically by CocoaPods autolinking.
+
+### 3. Android setup
+
+No extra steps — the native module is autolinked via Gradle. Requires Android SDK 24+ (Android 7.0).
+
+### 4. Expo (managed workflow)
+
+If you're using Expo with a [development build](https://docs.expo.dev/develop/development-builds/introduction/), add the config plugin to your `app.json` / `app.config.js`:
+
+```json
+{
+  "expo": {
+    "plugins": ["@nitroperf/core"]
+  }
+}
+```
+
+Then rebuild your native projects:
+
+```bash
+npx expo prebuild --clean
+```
+
+> The plugin enables TurboModule interop on iOS, which is required for Nitro Modules in Expo apps.
+
+### 5. (Optional) Rozenite DevTools panel
+
+For browser-based performance charts:
+
+```bash
 npm install @nitroperf/devtools
 ```
+
+See the [Rozenite DevTools](#rozenite-devtools) section below for usage.
+
+## Quick Start
 
 ```tsx
 import { PerfOverlay, usePerfMetrics, registerDevMenuItem } from '@nitroperf/core';
