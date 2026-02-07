@@ -17,8 +17,11 @@ import {
   usePerfMetrics,
 } from '@nitroperf/core'
 import { useNitroPerfDevTools } from '@nitroperf/devtools'
+import { WorkletDemo } from './demos/WorkletDemo'
+import { RerenderDemo } from './demos/RerenderDemo'
+import { GCPressureDemo } from './demos/GCPressureDemo'
 
-type DemoTab = 'scroll' | 'jank' | 'memory' | 'animations'
+type DemoTab = 'scroll' | 'jank' | 'memory' | 'animations' | 'worklets' | 'rerenders' | 'gc'
 
 // ─── Heavy Scroll Items ───────────────────────────────────────────────
 
@@ -361,10 +364,13 @@ function TabBar({ active, onChange }: { active: DemoTab; onChange: (tab: DemoTab
     { key: 'jank', label: 'JS Jank' },
     { key: 'memory', label: 'Memory' },
     { key: 'animations', label: 'Anim' },
+    { key: 'worklets', label: 'Worklets' },
+    { key: 'rerenders', label: 'Re-render' },
+    { key: 'gc', label: 'GC' },
   ]
 
   return (
-    <View style={styles.tabBar}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar} contentContainerStyle={styles.tabBarContent}>
       {tabs.map(tab => (
         <TouchableOpacity
           key={tab.key}
@@ -376,7 +382,7 @@ function TabBar({ active, onChange }: { active: DemoTab; onChange: (tab: DemoTab
           </Text>
         </TouchableOpacity>
       ))}
-    </View>
+    </ScrollView>
   )
 }
 
@@ -385,7 +391,7 @@ function TabBar({ active, onChange }: { active: DemoTab; onChange: (tab: DemoTab
 export default function App() {
   const [showOverlay, setShowOverlay] = useState(true)
   const [activeTab, setActiveTab] = useState<DemoTab>('scroll')
-  const { metrics } = usePerfMetrics({ updateIntervalMs: 300 })
+  usePerfMetrics({ updateIntervalMs: 300 })
   useNitroPerfDevTools()
 
   useEffect(() => {
@@ -399,13 +405,6 @@ export default function App() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Nitro Perf Demo</Text>
-        {metrics && (
-          <Text style={styles.headerMetrics}>
-            UI: {Math.round(metrics.uiFps)} | JS: {Math.round(metrics.jsFps)} |
-            RAM: {(metrics.ramBytes / (1024 * 1024)).toFixed(0)}MB |
-            Dropped: {Math.round(metrics.droppedFrames)} | Stutters: {Math.round(metrics.stutterCount)}
-          </Text>
-        )}
       </View>
 
       {/* Tab bar */}
@@ -417,6 +416,9 @@ export default function App() {
         {activeTab === 'jank' && <JankDemo />}
         {activeTab === 'memory' && <MemoryDemo />}
         {activeTab === 'animations' && <AnimationDemo />}
+        {activeTab === 'worklets' && <WorkletDemo />}
+        {activeTab === 'rerenders' && <RerenderDemo />}
+        {activeTab === 'gc' && <GCPressureDemo />}
       </View>
 
       {/* Perf overlay */}
@@ -445,21 +447,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  headerMetrics: {
-    color: '#4CAF50',
-    fontSize: 11,
-    marginTop: 4,
-    fontVariant: ['tabular-nums'],
-  },
   // Tab bar
   tabBar: {
-    flexDirection: 'row',
+    flexGrow: 0,
     backgroundColor: '#1a1a2e',
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
+  tabBarContent: {
+    flexDirection: 'row',
+  },
   tab: {
-    flex: 1,
+    flex: undefined,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     alignItems: 'center',
   },

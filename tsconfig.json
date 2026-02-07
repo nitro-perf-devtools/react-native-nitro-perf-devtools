@@ -13,10 +13,21 @@
     "sourceMap": true,
     "outDir": "lib",
     "paths": {
-      "@nitroperf/core": ["./packages/core/src"],
-      "@nitroperf/devtools": ["./packages/devtools/src"]
+      "@nitroperf/core": [
+        "./packages/core/src"
+      ],
+      "@nitroperf/devtools": [
+        "./packages/devtools/src"
+      ]
     }
   },
-  "include": ["packages/*/src/**/*"],
-  "exclude": ["node_modules", "lib", "nitrogen"]
+  "include": [
+    "packages/*/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib",
+    "nitrogen"
+  ],
+  "extends": "expo/tsconfig.base"
 }

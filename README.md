@@ -31,13 +31,25 @@ RN Overlay    usePerfMetrics()     Rozenite DevTools
 ### 1. Install the package
 
 ```bash
-npm install @nitroperf/core react-native-nitro-modules
+npm install -D @nitroperf/core react-native-nitro-modules
 ```
 
 or with Yarn:
 
 ```bash
-yarn add @nitroperf/core react-native-nitro-modules
+yarn add -D @nitroperf/core react-native-nitro-modules
+```
+
+or with pnpm:
+
+```bash
+pnpm add -D @nitroperf/core react-native-nitro-modules
+```
+
+or with Bun:
+
+```bash
+bun add -D @nitroperf/core react-native-nitro-modules
 ```
 
 ### 2. iOS setup
@@ -54,7 +66,13 @@ No extra steps — the native module is autolinked via Gradle. Requires Android 
 
 ### 4. Expo (managed workflow)
 
-If you're using Expo with a [development build](https://docs.expo.dev/develop/development-builds/introduction/), add the config plugin to your `app.json` / `app.config.js`:
+If you're using Expo with a [development build](https://docs.expo.dev/develop/development-builds/introduction/), install with:
+
+```bash
+npx expo install @nitroperf/core react-native-nitro-modules
+```
+
+Then add the config plugin to your `app.json` / `app.config.js`:
 
 ```json
 {
@@ -77,10 +95,31 @@ npx expo prebuild --clean
 For browser-based performance charts:
 
 ```bash
-npm install @nitroperf/devtools
+npm install -D @nitroperf/devtools
 ```
 
 See the [Rozenite DevTools](#rozenite-devtools) section below for usage.
+
+## Running the Example App
+
+The repo includes an Expo 55 example app that demonstrates the overlay, hook, and DevTools integration.
+
+```bash
+# Install dependencies (from the repo root)
+npm install
+
+# Generate native projects
+npm run example:prebuild
+
+# Run on iOS
+npm run example:ios
+
+# Run on Android
+npm run example:android
+
+# Or start Metro bundler manually
+npm run example:start
+```
 
 ## Quick Start
 
