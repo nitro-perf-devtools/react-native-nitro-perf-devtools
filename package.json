@@ -2,15 +2,18 @@
   "name": "react-native-nitro-perf-monorepo",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "example"
   ],
   "scripts": {
     "codegen": "cd packages/react-native-nitro-perf && npx nitrogen",
     "typecheck": "tsc --noEmit",
     "lint": "eslint packages/*/src/**/*.{ts,tsx}",
     "build": "cd packages/react-native-nitro-perf && bob build",
-    "example:ios": "cd ios && pod install && cd .. && npx react-native run-ios",
-    "example:android": "npx react-native run-android"
+    "example:start": "cd example && npm start",
+    "example:ios": "cd example && npm run ios",
+    "example:android": "cd example && npm run android",
+    "example:prebuild": "cd example && npm run prebuild"
   },
   "devDependencies": {
     "typescript": "^5.3.0",

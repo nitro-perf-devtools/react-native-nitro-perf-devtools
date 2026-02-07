@@ -32,5 +32,6 @@ Pod::Spec.new do |s|
   autolinking_script = File.join(__dir__, 'nitrogen', 'generated', 'ios', 'NitroPerf+autolinking.rb')
   if File.exist?(autolinking_script)
     load autolinking_script
+    add_nitrogen_files(s)
   end
 end

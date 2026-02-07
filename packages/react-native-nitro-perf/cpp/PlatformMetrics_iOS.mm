@@ -7,10 +7,9 @@
 #import <mach/mach.h>
 #import <mach/task_info.h>
 
-namespace nitroperf {
-
 /**
  * ObjC++ helper to bridge CADisplayLink selector callbacks to C++ std::function.
+ * Must be at global scope (ObjC declarations cannot appear inside C++ namespaces).
  */
 @interface NitroPerfDisplayLinkTarget : NSObject {
   std::function<void(double)> _callback;
@@ -36,6 +35,8 @@ namespace nitroperf {
 }
 
 @end
+
+namespace nitroperf {
 
 class PlatformMetrics_iOS : public PlatformMetrics {
 public:

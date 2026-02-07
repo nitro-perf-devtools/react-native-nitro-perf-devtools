@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "react-native-nitro-perf": ["../packages/react-native-nitro-perf/src"],
+      "nitro-perf-devtools": ["../packages/nitro-perf-devtools/src"]
+    }
+  }
+}

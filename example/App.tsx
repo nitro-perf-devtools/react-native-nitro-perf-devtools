@@ -5,14 +5,16 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
-  StatusBar,
 } from 'react-native'
+import { StatusBar } from 'expo-status-bar'
 import {
   PerfOverlay,
   registerDevMenuItem,
   usePerfMetrics,
 } from 'react-native-nitro-perf'
-import { useNitroPerfDevTools } from 'nitro-perf-devtools'
+
+// DevTools hook — uncomment when @rozenite/plugin-bridge is installed:
+// import { useNitroPerfDevTools } from 'nitro-perf-devtools'
 
 /**
  * A deliberately heavy item to stress-test FPS tracking.
@@ -53,9 +55,6 @@ export default function App() {
   const [showOverlay, setShowOverlay] = useState(true)
   const { metrics } = usePerfMetrics()
 
-  // Rozenite DevTools plugin hook
-  useNitroPerfDevTools()
-
   // Register dev menu toggle
   useEffect(() => {
     registerDevMenuItem(setShowOverlay)
@@ -63,7 +62,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar style="light" />
 
       {/* Header */}
       <View style={styles.header}>

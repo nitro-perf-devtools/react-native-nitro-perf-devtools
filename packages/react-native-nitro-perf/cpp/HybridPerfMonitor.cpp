@@ -2,12 +2,14 @@
 #include <chrono>
 #include <cmath>
 
-namespace nitroperf {
+namespace margelo::nitro::nitroperf {
 
 HybridPerfMonitor::HybridPerfMonitor()
-    : uiFpsTracker_(std::make_unique<FPSTracker>(60)),
-      jsFpsTracker_(std::make_unique<FPSTracker>(60)),
-      platform_(PlatformMetrics::create()) {}
+    : HybridObject(TAG),
+      HybridPerfMonitorSpec(),
+      uiFpsTracker_(std::make_unique<::nitroperf::FPSTracker>(60)),
+      jsFpsTracker_(std::make_unique<::nitroperf::FPSTracker>(60)),
+      platform_(::nitroperf::PlatformMetrics::create()) {}
 
 HybridPerfMonitor::~HybridPerfMonitor() {
   stop();
@@ -44,64 +46,64 @@ void HybridPerfMonitor::stop() {
   }
 }
 
-bool HybridPerfMonitor::getIsRunning() const {
+bool HybridPerfMonitor::getIsRunning() {
   return isRunning_.load();
 }
 
 PerfSnapshot HybridPerfMonitor::getMetrics() {
-  PerfSnapshot snapshot;
-  snapshot.uiFps = static_cast<double>(uiFpsTracker_->getCurrentFps());
-  snapshot.jsFps = static_cast<double>(jsFpsTracker_->getCurrentFps());
-  snapshot.ramBytes = static_cast<double>(platform_->getResidentMemoryBytes());
-  snapshot.jsHeapUsedBytes = static_cast<double>(jsHeapUsed_.load(std::memory_order_relaxed));
-  snapshot.jsHeapTotalBytes = static_cast<double>(jsHeapTotal_.load(std::memory_order_relaxed));
-  snapshot.droppedFrames = static_cast<double>(
-      uiFpsTracker_->getDroppedFrames() + jsFpsTracker_->getDroppedFrames());
-  snapshot.stutterCount = static_cast<double>(
-      uiFpsTracker_->getStutterCount() + jsFpsTracker_->getStutterCount());
-  snapshot.timestamp = getCurrentTimestamp();
-  return snapshot;
+  return PerfSnapshot(
+    static_cast<double>(uiFpsTracker_->getCurrentFps()),
+    static_cast<double>(jsFpsTracker_->getCurrentFps()),
+    static_cast<double>(platform_->getResidentMemoryBytes()),
+    static_cast<double>(jsHeapUsed_.load(std::memory_order_relaxed)),
+    static_cast<double>(jsHeapTotal_.load(std::memory_order_relaxed)),
+    static_cast<double>(uiFpsTracker_->getDroppedFrames() + jsFpsTracker_->getDroppedFrames()),
+    static_cast<double>(uiFpsTracker_->getStutterCount() + jsFpsTracker_->getStutterCount()),
+    getCurrentTimestamp()
+  );
 }
 
-FPSHistoryData HybridPerfMonitor::getHistory() {
-  FPSHistoryData history;
-
+FPSHistory HybridPerfMonitor::getHistory() {
   auto uiSamples = uiFpsTracker_->getSamples();
   auto jsSamples = jsFpsTracker_->getSamples();
 
-  history.uiFpsSamples.reserve(uiSamples.size());
+  std::vector<double> uiDoubleSamples;
+  uiDoubleSamples.reserve(uiSamples.size());
   for (int s : uiSamples) {
-    history.uiFpsSamples.push_back(static_cast<double>(s));
+    uiDoubleSamples.push_back(static_cast<double>(s));
   }
 
-  history.jsFpsSamples.reserve(jsSamples.size());
+  std::vector<double> jsDoubleSamples;
+  jsDoubleSamples.reserve(jsSamples.size());
   for (int s : jsSamples) {
-    history.jsFpsSamples.push_back(static_cast<double>(s));
+    jsDoubleSamples.push_back(static_cast<double>(s));
   }
 
-  history.uiFpsMin = static_cast<double>(uiFpsTracker_->getMinFps());
-  history.uiFpsMax = static_cast<double>(uiFpsTracker_->getMaxFps());
-  history.jsFpsMin = static_cast<double>(jsFpsTracker_->getMinFps());
-  history.jsFpsMax = static_cast<double>(jsFpsTracker_->getMaxFps());
-
-  return history;
+  return FPSHistory(
+    std::move(uiDoubleSamples),
+    std::move(jsDoubleSamples),
+    static_cast<double>(uiFpsTracker_->getMinFps()),
+    static_cast<double>(uiFpsTracker_->getMaxFps()),
+    static_cast<double>(jsFpsTracker_->getMinFps()),
+    static_cast<double>(jsFpsTracker_->getMaxFps())
+  );
 }
 
-int HybridPerfMonitor::subscribe(std::function<void(PerfSnapshot)> callback) {
-  int id = nextSubscriberId_.fetch_add(1);
+double HybridPerfMonitor::subscribe(const std::function<void(const PerfSnapshot&)>& cb) {
+  double id = static_cast<double>(nextSubscriberId_.fetch_add(1));
   std::lock_guard<std::mutex> lock(subscriberMutex_);
-  subscribers_[id] = std::move(callback);
+  subscribers_[id] = cb;
   return id;
 }
 
-void HybridPerfMonitor::unsubscribe(int id) {
+void HybridPerfMonitor::unsubscribe(double id) {
   std::lock_guard<std::mutex> lock(subscriberMutex_);
   subscribers_.erase(id);
 }
 
-void HybridPerfMonitor::reportJsFrameTick(double timestampMs) {
+void HybridPerfMonitor::reportJsFrameTick(double ts) {
   // Convert ms to seconds for FPSTracker
-  double timestampSeconds = timestampMs / 1000.0;
+  double timestampSeconds = ts / 1000.0;
   jsFpsTracker_->onFrameTick(timestampSeconds);
 }
 
@@ -109,10 +111,9 @@ void HybridPerfMonitor::configure(const PerfConfig& config) {
   updateIntervalMs_.store(static_cast<int>(config.updateIntervalMs));
 
   if (config.maxHistorySamples > 0) {
-    // Recreate trackers with new history size
     size_t maxSamples = static_cast<size_t>(config.maxHistorySamples);
-    uiFpsTracker_ = std::make_unique<FPSTracker>(maxSamples);
-    jsFpsTracker_ = std::make_unique<FPSTracker>(maxSamples);
+    uiFpsTracker_ = std::make_unique<::nitroperf::FPSTracker>(maxSamples);
+    jsFpsTracker_ = std::make_unique<::nitroperf::FPSTracker>(maxSamples);
   }
 
   if (config.targetFps > 0) {
@@ -156,4 +157,4 @@ double HybridPerfMonitor::getCurrentTimestamp() const {
   return static_cast<double>(millis.count());
 }
 
-} // namespace nitroperf
+} // namespace margelo::nitro::nitroperf
