@@ -13,6 +13,9 @@ import { ThresholdAlerts } from './components/ThresholdAlerts'
 import { BottleneckAnalysis } from './components/BottleneckAnalysis'
 import { SessionRecorder } from './components/SessionRecorder'
 import { CorrelationView } from './components/CorrelationView'
+import { ThreadDivergence } from './components/ThreadDivergence'
+import { GCPressureMeter } from './components/GCPressureMeter'
+import { StressTestAdvisor } from './components/StressTestAdvisor'
 
 interface PerfSnapshot {
   uiFps: number
@@ -77,6 +80,7 @@ const MAX_FRAME_TIMES = 300
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
+  { id: 'diagnostics', label: 'Diagnostics' },
   { id: 'fps', label: 'FPS Analysis' },
   { id: 'memory', label: 'Memory' },
   { id: 'stutters', label: 'Stutters' },
@@ -402,6 +406,20 @@ export default function Panel() {
             <MemoryChart dataPoints={memoryData} />
           </div>
           <ThresholdAlerts alerts={alerts} onClearAlerts={handleClearAlerts} />
+        </div>
+      )}
+
+      {/* ==================== DIAGNOSTICS TAB ==================== */}
+      {activeTab === 'diagnostics' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <StressTestAdvisor
+            metrics={metrics}
+            memoryTrend={memoryTrend}
+            stutterRate={stutterRate}
+            fpsData={fpsData}
+          />
+          <ThreadDivergence fpsData={fpsData} />
+          <GCPressureMeter memoryData={memoryData} />
         </div>
       )}
 
