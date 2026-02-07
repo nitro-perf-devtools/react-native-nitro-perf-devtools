@@ -9,7 +9,7 @@
     "newArchEnabled": true,
     "plugins": [
       [
-        "react-native-nitro-perf",
+        "@nitroperf/core",
         {
           "releaseLevel": "canary",
           "enableTurboInterop": true

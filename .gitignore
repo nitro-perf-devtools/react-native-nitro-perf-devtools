@@ -12,3 +12,5 @@ DerivedData/
 *.dSYM
 .env
 .DS_Store
+docs/build/
+docs/.docusaurus/

@@ -39,7 +39,7 @@ function withNitroPerfAppDelegate(config, props) {
       const interopSnippet = [
         "didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil",
         "  ) -> Bool {",
-        "    // react-native-nitro-perf: ensure Expo canary enables TM interop before RN init",
+        "    // @nitroperf/core: ensure Expo canary enables TM interop before RN init",
         "    RCTEnableTurboModuleInterop(true)",
         "    RCTEnableTurboModuleInteropBridgeProxy(true)",
       ].join("\n");

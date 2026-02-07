@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useRozeniteDevToolsClient } from '@rozenite/plugin-bridge'
-import { getPerfMonitor } from 'react-native-nitro-perf'
-import type { PerfSnapshot, FPSHistory } from 'react-native-nitro-perf'
+import { getPerfMonitor } from '@nitroperf/core'
+import type { PerfSnapshot, FPSHistory } from '@nitroperf/core'
 
 interface PerfEvents {
   'perf-snapshot': PerfSnapshot
@@ -19,7 +19,7 @@ interface PerfEvents {
  *
  * Add this hook in your app's root component:
  * ```tsx
- * import { useNitroPerfDevTools } from 'nitro-perf-devtools';
+ * import { useNitroPerfDevTools } from '@nitroperf/devtools';
  *
  * function App() {
  *   useNitroPerfDevTools();

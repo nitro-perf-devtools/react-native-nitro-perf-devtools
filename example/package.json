@@ -16,7 +16,7 @@
     "react": "19.2.0",
     "react-native": "0.83.2",
     "react-native-nitro-modules": "^0.33.7",
-    "react-native-nitro-perf": "*"
+    "@nitroperf/core": "*"
   },
   "devDependencies": {
     "@types/react": "~19.2.0",

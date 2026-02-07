@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { PerfSnapshot, FPSHistory, PerfMonitor } from './specs/nitro-perf.nitro'
 import type { UsePerfMetricsOptions, UsePerfMetricsReturn } from './types'
-import { getPerfMonitor } from './singleton'
+import { getPerfMonitor, startJsFrameLoop, stopJsFrameLoop } from './singleton'
 
 /**
  * React hook that provides real-time performance metrics.
  *
- * On Android, automatically starts a requestAnimationFrame loop
- * calling reportJsFrameTick() since Choreographer can't natively
- * track JS thread FPS.
+ * JS FPS is tracked via a single requestAnimationFrame loop managed
+ * by the singleton module — multiple hooks share the same loop.
  */
 export function usePerfMetrics(
   options: UsePerfMetricsOptions = {}
@@ -25,7 +24,6 @@ export function usePerfMetrics(
   const [isRunning, setIsRunning] = useState(false)
 
   const monitorRef = useRef<PerfMonitor | null>(null)
-  const rafIdRef = useRef<number | null>(null)
 
   // Get or create singleton monitor
   const getMonitor = useCallback((): PerfMonitor => {
@@ -33,25 +31,6 @@ export function usePerfMetrics(
       monitorRef.current = getPerfMonitor()
     }
     return monitorRef.current
-  }, [])
-
-  // rAF loop for JS FPS tracking (all platforms in bridgeless/Fabric mode)
-  const startJsFrameTracking = useCallback(() => {
-    const monitor = getMonitor()
-    const tick = () => {
-      if (monitorRef.current) {
-        monitor.reportJsFrameTick(performance.now())
-        rafIdRef.current = requestAnimationFrame(tick)
-      }
-    }
-    rafIdRef.current = requestAnimationFrame(tick)
-  }, [getMonitor])
-
-  const stopJsFrameTracking = useCallback(() => {
-    if (rafIdRef.current !== null) {
-      cancelAnimationFrame(rafIdRef.current)
-      rafIdRef.current = null
-    }
   }, [])
 
   const start = useCallback(() => {
@@ -62,16 +41,16 @@ export function usePerfMetrics(
       targetFps,
     })
     monitor.start()
-    startJsFrameTracking()
+    startJsFrameLoop()
     setIsRunning(true)
-  }, [getMonitor, updateIntervalMs, maxHistorySamples, targetFps, startJsFrameTracking])
+  }, [getMonitor, updateIntervalMs, maxHistorySamples, targetFps])
 
   const stop = useCallback(() => {
     const monitor = getMonitor()
     monitor.stop()
-    stopJsFrameTracking()
+    stopJsFrameLoop()
     setIsRunning(false)
-  }, [getMonitor, stopJsFrameTracking])
+  }, [getMonitor])
 
   const reset = useCallback(() => {
     const monitor = getMonitor()
@@ -95,7 +74,6 @@ export function usePerfMetrics(
 
     return () => {
       monitor.unsubscribe(subId)
-      stopJsFrameTracking()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

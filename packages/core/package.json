@@ -1,5 +1,5 @@
 {
-  "name": "react-native-nitro-perf",
+  "name": "@nitroperf/core",
   "version": "0.1.0",
   "description": "Hybrid performance monitor for React Native — UI FPS, JS FPS, RAM, heap, stutters via Nitro Modules",
   "main": "lib/commonjs/index.js",

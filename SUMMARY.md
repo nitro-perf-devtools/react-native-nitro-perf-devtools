@@ -13,22 +13,22 @@
   - `[runtime not ready] ... 'PlatformConstants' could not be found ... TurboModule interop: false` when Metro was running but TurboModule interop was not active.
 
 ## Key Changes Made
-- Added an Expo config plugin for `react-native-nitro-perf`:
-  - `packages/react-native-nitro-perf/app.plugin.js`
+- Added an Expo config plugin for `@nitroperf/core`:
+  - `packages/core/app.plugin.js`
   - Sets `Info.plist` `ReactNativeReleaseLevel` (default `canary`).
   - Patches iOS `AppDelegate.swift` during prebuild to:
     - Insert `RCTEnableTurboModuleInterop(true)`.
     - Insert `RCTEnableTurboModuleInteropBridgeProxy(true)`.
     - Use `ExpoReactNativeFactoryObjC(delegate: ..., releaseLevel: RCTReleaseLevel.<...>)`.
 - Registered plugin metadata in package:
-  - `packages/react-native-nitro-perf/package.json`
+  - `packages/core/package.json`
   - Added:
     - `"app.plugin.js"` in `files`
     - `"expo": { "plugins": ["./app.plugin.js"] }`
 - Wired plugin in example app config:
   - `example/app.json`
   - Added:
-    - `"react-native-nitro-perf"` plugin with:
+    - `"@nitroperf/core"` plugin with:
       - `"releaseLevel": "canary"`
       - `"enableTurboInterop": true`
 

@@ -15,7 +15,7 @@ export type {
 // Re-export hooks and utilities
 export { usePerfMetrics } from './usePerfMetrics'
 export { PerfOverlay } from './PerfOverlay'
-export { getPerfMonitor } from './singleton'
+export { getPerfMonitor, startJsFrameLoop, stopJsFrameLoop } from './singleton'
 export {
   registerDevMenuItem,
   setPerfOverlayVisible,

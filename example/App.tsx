@@ -15,7 +15,7 @@ import {
   PerfOverlay,
   registerDevMenuItem,
   usePerfMetrics,
-} from 'react-native-nitro-perf'
+} from '@nitroperf/core'
 
 type DemoTab = 'scroll' | 'jank' | 'memory' | 'animations'
 

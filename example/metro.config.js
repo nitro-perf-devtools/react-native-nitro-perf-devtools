@@ -17,15 +17,15 @@ config.resolver.nodeModulesPaths = [
 
 // Map workspace packages to their source directories
 config.resolver.extraNodeModules = {
-  'react-native-nitro-perf': path.resolve(monorepoRoot, 'packages/react-native-nitro-perf'),
+  '@nitroperf/core': path.resolve(monorepoRoot, 'packages/core'),
 };
 
 // Block the devtools package from being resolved (its deps like @rozenite/plugin-bridge
 // are not installed in the example app). Uncomment the line below and add to
 // extraNodeModules when Rozenite deps are available.
-// 'nitro-perf-devtools': path.resolve(monorepoRoot, 'packages/nitro-perf-devtools'),
+// '@nitroperf/devtools': path.resolve(monorepoRoot, 'packages/devtools'),
 config.resolver.blockList = [
-  /packages\/nitro-perf-devtools\/.*/,
+  /packages\/devtools\/.*/,
 ];
 
 module.exports = config;

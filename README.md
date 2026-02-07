@@ -1,4 +1,4 @@
-# react-native-nitro-perf
+# @nitroperf/core
 
 Hybrid performance monitor for React Native — UI FPS, JS FPS, RAM, JS heap, dropped frames, and stutter detection, powered by [Nitro Modules](https://github.com/nicklockwood/NitroModules).
 
@@ -30,17 +30,17 @@ RN Overlay    usePerfMetrics()     Rozenite DevTools
 
 ```bash
 # Install
-npm install react-native-nitro-perf react-native-nitro-modules
+npm install @nitroperf/core react-native-nitro-modules
 
 # iOS
 cd ios && pod install
 
 # Optional: Rozenite DevTools panel
-npm install nitro-perf-devtools
+npm install @nitroperf/devtools
 ```
 
 ```tsx
-import { PerfOverlay, usePerfMetrics, registerDevMenuItem } from 'react-native-nitro-perf';
+import { PerfOverlay, usePerfMetrics, registerDevMenuItem } from '@nitroperf/core';
 
 function App() {
   const [showOverlay, setShowOverlay] = useState(true);
@@ -126,7 +126,7 @@ interface PerfSnapshot {
 For a rich browser-based debugging experience:
 
 ```tsx
-import { useNitroPerfDevTools } from 'nitro-perf-devtools';
+import { useNitroPerfDevTools } from '@nitroperf/devtools';
 
 function App() {
   useNitroPerfDevTools(); // Bridges metrics to DevTools panel
@@ -162,12 +162,12 @@ Same approach as React Native's built-in `RCTFPSGraph.mm`: count frame callbacks
 
 ```
 packages/
-  react-native-nitro-perf/     # Nitro module (npm package)
+  core/                         # Nitro module (npm: @nitroperf/core)
     cpp/                        # Shared C++ (FPSTracker, PlatformMetrics, HybridPerfMonitor)
     src/                        # TypeScript (specs, hook, overlay, dev menu)
     ios/                        # iOS-specific files
     android/                    # Android build + Kotlin Choreographer helper
-  nitro-perf-devtools/          # Rozenite plugin (npm package)
+  devtools/                     # Rozenite plugin (npm: @nitroperf/devtools)
     src/                        # DevTools panel (React + Recharts)
     react-native.ts             # App-side bridge hook
 ```

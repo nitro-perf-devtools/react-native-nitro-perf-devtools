@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-react-native-nitro-perf is a hybrid performance monitor for React Native that tracks UI FPS, JS FPS, RAM, JS heap, dropped frames, and stutter detection. It uses [Nitro Modules](https://github.com/nicklockwood/NitroModules) for synchronous JSI calls between JS and C++.
+@nitroperf/core is a hybrid performance monitor for React Native that tracks UI FPS, JS FPS, RAM, JS heap, dropped frames, and stutter detection. It uses [Nitro Modules](https://github.com/nicklockwood/NitroModules) for synchronous JSI calls between JS and C++.
 
 The library ships as two npm packages in a monorepo:
-- **react-native-nitro-perf** — the core Nitro module (C++ + TS)
-- **nitro-perf-devtools** — a Rozenite DevTools plugin for browser-based performance charts
+- **@nitroperf/core** — the core Nitro module (C++ + TS)
+- **@nitroperf/devtools** — a Rozenite DevTools plugin for browser-based performance charts
 
 ## Common Commands
 
@@ -35,7 +35,7 @@ npm run example:android        # Android emulator
 npm run example:prebuild       # Expo prebuild (generates ios/android native projects)
 
 # Package-level commands
-cd packages/react-native-nitro-perf
+cd packages/core
 npx nitrogen                   # Run codegen directly
 bob build                      # Build directly
 rm -rf lib nitrogen/generated  # Clean build artifacts
@@ -66,13 +66,13 @@ DevTools (browser)
 
 ## Key Source Paths
 
-- **Nitro spec** (defines the C++ bindings): `packages/react-native-nitro-perf/src/specs/nitro-perf.nitro.ts`
-- **C++ core**: `packages/react-native-nitro-perf/cpp/` — HybridPerfMonitor, FPSTracker, PlatformMetrics
-- **iOS native**: `packages/react-native-nitro-perf/cpp/PlatformMetrics_iOS.mm`
-- **Android native**: `packages/react-native-nitro-perf/cpp/PlatformMetrics_Android.cpp` + `android/src/main/java/com/nitroperf/PerfMetricsProvider.kt`
-- **Nitrogen config**: `packages/react-native-nitro-perf/nitro.json` — maps `PerfMonitor` → `HybridPerfMonitor`, namespace `nitroperf`
-- **Podspec**: `packages/react-native-nitro-perf/NitroPerf.podspec` (iOS 13+, C++20)
-- **Android build**: `packages/react-native-nitro-perf/android/build.gradle` + `CMakeLists.txt` (SDK 24+, C++20)
+- **Nitro spec** (defines the C++ bindings): `packages/core/src/specs/nitro-perf.nitro.ts`
+- **C++ core**: `packages/core/cpp/` — HybridPerfMonitor, FPSTracker, PlatformMetrics
+- **iOS native**: `packages/core/cpp/PlatformMetrics_iOS.mm`
+- **Android native**: `packages/core/cpp/PlatformMetrics_Android.cpp` + `android/src/main/java/com/nitroperf/PerfMetricsProvider.kt`
+- **Nitrogen config**: `packages/core/nitro.json` — maps `PerfMonitor` → `HybridPerfMonitor`, namespace `nitroperf`
+- **Podspec**: `packages/core/NitroPerf.podspec` (iOS 13+, C++20)
+- **Android build**: `packages/core/android/build.gradle` + `CMakeLists.txt` (SDK 24+, C++20)
 
 ## Nitrogen Codegen Workflow
 

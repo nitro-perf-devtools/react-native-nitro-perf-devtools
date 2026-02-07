@@ -6,10 +6,10 @@ Pod::Spec.new do |s|
   s.name         = 'NitroPerf'
   s.version      = package['version']
   s.summary      = package['description']
-  s.homepage     = 'https://github.com/user/react-native-nitro-perf'
+  s.homepage     = 'https://github.com/nitroperf/react-native-perf-monitor'
   s.license      = package['license']
   s.authors      = 'NitroPerf Contributors'
-  s.source       = { :git => 'https://github.com/user/react-native-nitro-perf.git', :tag => s.version }
+  s.source       = { :git => 'https://github.com/nitroperf/react-native-perf-monitor.git', :tag => s.version }
 
   s.platforms    = { :ios => '13.0' }
   s.swift_version = '5.0'
