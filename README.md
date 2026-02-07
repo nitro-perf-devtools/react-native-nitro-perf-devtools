@@ -3,7 +3,7 @@
 Hybrid performance monitor for React Native — UI FPS, JS FPS, RAM, JS heap, dropped frames, and stutter detection, powered by [Nitro Modules](https://github.com/nicklockwood/NitroModules).
 
 ## Demo
-<img width="1206" height="2622" alt="Simulator Screenshot - iPhone 17 Pro - 2026-02-07 at 10 06 27" src="https://github.com/user-attachments/assets/d6d92347-bda6-46be-911e-f816bb421771" />
+<img width="301" height="655" alt="Simulator Screenshot - iPhone 17 Pro - 2026-02-07 at 10 06 27" src="https://github.com/user-attachments/assets/d6d92347-bda6-46be-911e-f816bb421771" />
 
 
 ## Architecture
