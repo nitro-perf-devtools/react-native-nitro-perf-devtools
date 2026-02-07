@@ -11,6 +11,8 @@ interface PerfEvents {
   'start-monitor': Record<string, never>
   'stop-monitor': Record<string, never>
   'reset-monitor': Record<string, never>
+  'export-session': Record<string, never>
+  'session-data': { snapshots: PerfSnapshot[]; history: FPSHistory }
 }
 
 /**
@@ -56,6 +58,13 @@ export function useNitroPerfDevTools() {
 
     client.onMessage('request-history', () => {
       client.send('perf-history', monitor.getHistory())
+    })
+
+    client.onMessage('export-session', () => {
+      client.send('session-data', {
+        snapshots: [monitor.getMetrics()],
+        history: monitor.getHistory(),
+      })
     })
 
     // Push periodic metric updates to the panel
