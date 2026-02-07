@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "nia": {
+      "type": "http",
+      "url": "https://apigcp.trynia.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer nk_96mn9aLD8qmQejaPPDddPtyH5IBDrjWG"
+      },
+      "tools": [
+        "index",
+        "search",
+        "manage_resource",
+        "nia_web_search",
+        "nia_deep_research_agent"
+      ]
+    }
+  }
+}

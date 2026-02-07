@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Platform } from 'react-native'
 import type { PerfSnapshot, FPSHistory, PerfMonitor } from './specs/nitro-perf.nitro'
 import type { UsePerfMetricsOptions, UsePerfMetricsReturn } from './types'
-import { getPerfMonitor } from './index'
+import { getPerfMonitor } from './singleton'
 
 /**
  * React hook that provides real-time performance metrics.
@@ -36,10 +35,8 @@ export function usePerfMetrics(
     return monitorRef.current
   }, [])
 
-  // rAF loop for JS FPS tracking on Android
+  // rAF loop for JS FPS tracking (all platforms in bridgeless/Fabric mode)
   const startJsFrameTracking = useCallback(() => {
-    if (Platform.OS !== 'android') return
-
     const monitor = getMonitor()
     const tick = () => {
       if (monitorRef.current) {
