@@ -13,13 +13,16 @@
     "expo": "55.0.0-preview.9",
     "expo-status-bar": "~55.0.2",
     "nullthrows": "^1.1.1",
-    "react": "19.2.0",
+    "react": "19.2.4",
     "react-native": "0.83.2",
-    "react-native-nitro-modules": "^0.33.7",
-    "@nitroperf/core": "*"
+    "react-native-nitro-modules": "^0.33.0",
+    "@nitroperf/core": "*",
+    "@nitroperf/devtools": "*",
+    "@rozenite/plugin-bridge": "^1.2.0"
   },
   "devDependencies": {
     "@types/react": "~19.2.0",
+    "@rozenite/metro": "^1.2.0",
     "typescript": "~5.9.2"
   },
   "private": true

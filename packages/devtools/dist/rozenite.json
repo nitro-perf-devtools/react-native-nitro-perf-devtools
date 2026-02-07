@@ -1,0 +1,1 @@
+{"name":"@nitroperf/devtools","version":"0.1.0","description":"Rozenite DevTools plugin for @nitroperf/core — rich performance charts in your browser","panels":[{"name":"Performance","source":"/Panel.html"}]}

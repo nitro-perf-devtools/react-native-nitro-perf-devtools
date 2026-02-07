@@ -9,7 +9,8 @@
     "rozenite.config.ts"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "vite build"
   },
   "keywords": [
     "rozenite",
@@ -26,11 +27,16 @@
   "devDependencies": {
     "rozenite": "^1.2.0",
     "@rozenite/vite-plugin": "^1.2.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^6.0.0",
+    "vite-plugin-react-native-web": "^1.0.0",
+    "react-dom": "^19.0.0",
+    "react-native-web": "^0.21.0",
     "typescript": "^5.3.0"
   },
   "peerDependencies": {
-    "@nitroperf/core": "*"
+    "@nitroperf/core": "*",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   }
 }

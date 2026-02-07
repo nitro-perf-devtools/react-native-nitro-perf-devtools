@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useRozeniteDevToolsPlugin } from '@rozenite/plugin-bridge'
+import { useRozeniteDevToolsClient } from '@rozenite/plugin-bridge'
 import { MetricCards } from './components/MetricCards'
 import { FPSChart } from './components/FPSChart'
 import { MemoryChart } from './components/MemoryChart'
@@ -86,7 +86,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id']
 
 export default function Panel() {
-  const plugin = useRozeniteDevToolsPlugin<PerfEvents>({
+  const plugin = useRozeniteDevToolsClient<PerfEvents>({
     pluginId: 'nitro-perf',
   })
 

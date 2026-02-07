@@ -16,6 +16,7 @@ import {
   registerDevMenuItem,
   usePerfMetrics,
 } from '@nitroperf/core'
+import { useNitroPerfDevTools } from '@nitroperf/devtools'
 
 type DemoTab = 'scroll' | 'jank' | 'memory' | 'animations'
 
@@ -385,6 +386,7 @@ export default function App() {
   const [showOverlay, setShowOverlay] = useState(true)
   const [activeTab, setActiveTab] = useState<DemoTab>('scroll')
   const { metrics } = usePerfMetrics({ updateIntervalMs: 300 })
+  useNitroPerfDevTools()
 
   useEffect(() => {
     registerDevMenuItem(setShowOverlay)

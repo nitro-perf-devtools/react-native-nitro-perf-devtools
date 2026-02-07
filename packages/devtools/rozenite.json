@@ -1,0 +1,7 @@
+{
+  "name": "nitro-perf",
+  "version": "0.1.0",
+  "description": "Performance monitoring DevTools for React Native",
+  "config": "./rozenite.config.ts",
+  "entry": "./react-native.ts"
+}
