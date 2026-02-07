@@ -266,8 +266,9 @@ export default function Panel() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       background: '#121212',
       color: '#fff',
-      minHeight: '100vh',
+      height: '100vh',
       padding: 20,
+      overflowY: 'auto',
     }}>
       {/* Header */}
       <div style={{
