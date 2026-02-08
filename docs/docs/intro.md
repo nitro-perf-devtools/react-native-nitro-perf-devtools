@@ -5,7 +5,7 @@ slug: /
 
 # Introduction
 
-**@nitroperf/core** is a hybrid performance monitor for React Native that tracks UI FPS, JS FPS, RAM, JS heap, dropped frames, and stutter detection, powered by [Nitro Modules](https://github.com/mrousavy/nitro).
+**@nitroperf/core** is a hybrid performance monitor for React Native that tracks UI FPS, JS FPS, RAM, JS heap, dropped frames, stutter detection, long tasks, slow events (INP proxy), and React render profiling, powered by [Nitro Modules](https://github.com/mrousavy/nitro).
 
 ## Three Consumption Modes
 
@@ -48,7 +48,13 @@ graph TB
 
     subgraph JS["JavaScript"]
         RAF["requestAnimationFrame"]
+        OBS["PerformanceObserver"]
+        HEAP["Heap Polling"]
+        PROF["React Profiler"]
         RAF --> FPS2
+        OBS -->|"reportLongTask/reportSlowEvent"| HM
+        HEAP -->|"reportJsHeap"| HM
+        PROF -->|"reportRender"| HM
     end
 
     subgraph CONSUMERS["Consumers"]

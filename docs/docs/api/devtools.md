@@ -37,7 +37,19 @@ Then open DevTools and navigate to the **Performance** tab.
 
 ### Features
 
-The DevTools panel provides five tabs for comprehensive performance analysis:
+The DevTools panel provides seven tabs for comprehensive performance analysis:
+
+#### Diagnostics Tab
+
+- **Stress Test Advisor** -- AI-powered analysis that examines current metrics and provides actionable recommendations for load testing, memory profiling, and identifying bottlenecks.
+- **Thread Divergence** -- Compares UI FPS and JS FPS over time to identify when the JS thread falls behind the UI thread, indicating JS-side bottlenecks.
+- **GC Pressure Meter** -- Monitors JS heap utilization and detects garbage collection events by watching for sudden drops in heap usage.
+
+#### New Arch Tab
+
+- **Architecture Info** -- Displays the current React Native architecture: Fabric enabled/disabled, Bridgeless mode, JS engine (Hermes/V8/JSC), and RN version.
+- **Startup Timing** -- Shows native initialization time, JS bundle load time, and time-to-interactive (TTI) when available (RN 0.82+).
+- **Runtime Metrics** -- Long task count and total duration, slow event count (INP proxy), worst event duration with color-coded severity (>200ms red), render count and last render duration from React Profiler.
 
 #### Overview Tab
 
