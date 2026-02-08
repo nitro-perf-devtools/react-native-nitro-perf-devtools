@@ -47,10 +47,16 @@ namespace margelo::nitro::nitroperf {
     double droppedFrames     SWIFT_PRIVATE;
     double stutterCount     SWIFT_PRIVATE;
     double timestamp     SWIFT_PRIVATE;
+    double longTaskCount     SWIFT_PRIVATE;
+    double longTaskTotalMs     SWIFT_PRIVATE;
+    double slowEventCount     SWIFT_PRIVATE;
+    double maxEventDurationMs     SWIFT_PRIVATE;
+    double renderCount     SWIFT_PRIVATE;
+    double lastRenderDurationMs     SWIFT_PRIVATE;
 
   public:
     PerfSnapshot() = default;
-    explicit PerfSnapshot(double uiFps, double jsFps, double ramBytes, double jsHeapUsedBytes, double jsHeapTotalBytes, double droppedFrames, double stutterCount, double timestamp): uiFps(uiFps), jsFps(jsFps), ramBytes(ramBytes), jsHeapUsedBytes(jsHeapUsedBytes), jsHeapTotalBytes(jsHeapTotalBytes), droppedFrames(droppedFrames), stutterCount(stutterCount), timestamp(timestamp) {}
+    explicit PerfSnapshot(double uiFps, double jsFps, double ramBytes, double jsHeapUsedBytes, double jsHeapTotalBytes, double droppedFrames, double stutterCount, double timestamp, double longTaskCount, double longTaskTotalMs, double slowEventCount, double maxEventDurationMs, double renderCount, double lastRenderDurationMs): uiFps(uiFps), jsFps(jsFps), ramBytes(ramBytes), jsHeapUsedBytes(jsHeapUsedBytes), jsHeapTotalBytes(jsHeapTotalBytes), droppedFrames(droppedFrames), stutterCount(stutterCount), timestamp(timestamp), longTaskCount(longTaskCount), longTaskTotalMs(longTaskTotalMs), slowEventCount(slowEventCount), maxEventDurationMs(maxEventDurationMs), renderCount(renderCount), lastRenderDurationMs(lastRenderDurationMs) {}
 
   public:
     friend bool operator==(const PerfSnapshot& lhs, const PerfSnapshot& rhs) = default;
@@ -73,7 +79,13 @@ namespace margelo::nitro {
         JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "jsHeapTotalBytes"))),
         JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "droppedFrames"))),
         JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "stutterCount"))),
-        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "timestamp")))
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "timestamp"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "longTaskCount"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "longTaskTotalMs"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "slowEventCount"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "maxEventDurationMs"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "renderCount"))),
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "lastRenderDurationMs")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::nitroperf::PerfSnapshot& arg) {
@@ -86,6 +98,12 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "droppedFrames"), JSIConverter<double>::toJSI(runtime, arg.droppedFrames));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "stutterCount"), JSIConverter<double>::toJSI(runtime, arg.stutterCount));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "timestamp"), JSIConverter<double>::toJSI(runtime, arg.timestamp));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "longTaskCount"), JSIConverter<double>::toJSI(runtime, arg.longTaskCount));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "longTaskTotalMs"), JSIConverter<double>::toJSI(runtime, arg.longTaskTotalMs));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "slowEventCount"), JSIConverter<double>::toJSI(runtime, arg.slowEventCount));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "maxEventDurationMs"), JSIConverter<double>::toJSI(runtime, arg.maxEventDurationMs));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "renderCount"), JSIConverter<double>::toJSI(runtime, arg.renderCount));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "lastRenderDurationMs"), JSIConverter<double>::toJSI(runtime, arg.lastRenderDurationMs));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -104,6 +122,12 @@ namespace margelo::nitro {
       if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "droppedFrames")))) return false;
       if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "stutterCount")))) return false;
       if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "timestamp")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "longTaskCount")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "longTaskTotalMs")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "slowEventCount")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "maxEventDurationMs")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "renderCount")))) return false;
+      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "lastRenderDurationMs")))) return false;
       return true;
     }
   };

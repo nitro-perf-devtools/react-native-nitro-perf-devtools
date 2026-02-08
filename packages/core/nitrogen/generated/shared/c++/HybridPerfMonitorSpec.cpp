@@ -22,6 +22,10 @@ namespace margelo::nitro::nitroperf {
       prototype.registerHybridMethod("subscribe", &HybridPerfMonitorSpec::subscribe);
       prototype.registerHybridMethod("unsubscribe", &HybridPerfMonitorSpec::unsubscribe);
       prototype.registerHybridMethod("reportJsFrameTick", &HybridPerfMonitorSpec::reportJsFrameTick);
+      prototype.registerHybridMethod("reportLongTask", &HybridPerfMonitorSpec::reportLongTask);
+      prototype.registerHybridMethod("reportSlowEvent", &HybridPerfMonitorSpec::reportSlowEvent);
+      prototype.registerHybridMethod("reportRender", &HybridPerfMonitorSpec::reportRender);
+      prototype.registerHybridMethod("reportJsHeap", &HybridPerfMonitorSpec::reportJsHeap);
       prototype.registerHybridMethod("configure", &HybridPerfMonitorSpec::configure);
       prototype.registerHybridMethod("reset", &HybridPerfMonitorSpec::reset);
     });

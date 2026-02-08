@@ -26,6 +26,26 @@ interface PerfSnapshot {
   droppedFrames: number
   stutterCount: number
   timestamp: number
+  longTaskCount: number
+  longTaskTotalMs: number
+  slowEventCount: number
+  maxEventDurationMs: number
+  renderCount: number
+  lastRenderDurationMs: number
+}
+
+interface ArchInfo {
+  isFabric: boolean
+  isBridgeless: boolean
+  jsEngine: 'hermes' | 'v8' | 'jsc'
+  reactNativeVersion: string
+}
+
+interface StartupTiming {
+  available: boolean
+  nativeInitMs?: number
+  bundleLoadMs?: number
+  ttiMs?: number
 }
 
 interface FPSHistory {
@@ -46,7 +66,12 @@ interface PerfEvents {
   'stop-monitor': Record<string, never>
   'reset-monitor': Record<string, never>
   'export-session': Record<string, never>
+  'clear-data': Record<string, never>
   'session-data': { snapshots: PerfSnapshot[]; history: FPSHistory }
+  'request-arch-info': Record<string, never>
+  'arch-info': ArchInfo
+  'request-startup-timing': Record<string, never>
+  'startup-timing': StartupTiming
 }
 
 interface MemoryDataPoint {
@@ -77,10 +102,12 @@ interface AlertEntry {
 
 const MAX_MEMORY_POINTS = 120
 const MAX_FRAME_TIMES = 300
+const MAX_STUTTER_EVENTS = 500
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'diagnostics', label: 'Diagnostics' },
+  { id: 'new-arch', label: 'New Arch' },
   { id: 'fps', label: 'FPS Analysis' },
   { id: 'memory', label: 'Memory' },
   { id: 'stutters', label: 'Stutters' },
@@ -103,6 +130,8 @@ export default function Panel() {
   const [frameTimes, setFrameTimes] = useState<FrameTimeEntry[]>([])
   const [alerts, setAlerts] = useState<AlertEntry[]>([])
   const [fpsData, setFpsData] = useState<{ uiFps: number; jsFps: number }[]>([])
+  const [archInfo, setArchInfo] = useState<ArchInfo | null>(null)
+  const [startupTiming, setStartupTiming] = useState<StartupTiming | null>(null)
 
   const prevStutterCount = useRef(0)
   const prevSnapshotTs = useRef(0)
@@ -119,6 +148,21 @@ export default function Panel() {
     return (last.ramMB - first.ramMB) / elapsedMin
   }, [memoryData])
 
+  // Compute memory rate (MB/sec and MB/min) from recent data
+  const memoryRatePerSec = useMemo(() => {
+    if (memoryData.length < 2) return 0
+    const recent = memoryData.slice(-10)
+    const first = recent[0]
+    const last = recent[recent.length - 1]
+    const elapsedSec = (last.timestamp - first.timestamp) / 1000
+    if (elapsedSec <= 0) return 0
+    return (last.ramMB - first.ramMB) / elapsedSec
+  }, [memoryData])
+
+  const memoryRatePerMin = useMemo(() => {
+    return memoryTrend
+  }, [memoryTrend])
+
   // Compute stutter rate (per minute) from last 60s
   const stutterRate = useMemo(() => {
     if (stutterEvents.length === 0) return 0
@@ -133,6 +177,8 @@ export default function Panel() {
       { metric: 'UI FPS', value: snapshot.uiFps, warnBelow: 45, critBelow: 30 },
       { metric: 'JS FPS', value: snapshot.jsFps, warnBelow: 45, critBelow: 30 },
       { metric: 'RAM', value: snapshot.ramBytes / (1024 * 1024), warnAbove: 500, critAbove: 800 },
+      { metric: 'INP', value: snapshot.maxEventDurationMs, warnAbove: 200, critAbove: 500 },
+      { metric: 'Long Tasks', value: snapshot.longTaskCount, warnAbove: 10, critAbove: 50 },
     ]
 
     for (const rule of rules) {
@@ -182,8 +228,13 @@ export default function Panel() {
 
       // Track FPS data for correlation
       setFpsData((prev) => {
-        const next = [...prev, { uiFps: snapshot.uiFps, jsFps: snapshot.jsFps }]
-        return next.slice(-MAX_MEMORY_POINTS)
+        const item = { uiFps: snapshot.uiFps, jsFps: snapshot.jsFps }
+        if (prev.length >= MAX_MEMORY_POINTS) {
+          const trimmed = prev.slice(1)
+          trimmed.push(item)
+          return trimmed
+        }
+        return [...prev, item]
       })
 
       // Derive frame times from consecutive snapshots
@@ -191,12 +242,13 @@ export default function Panel() {
         const frameTimeMs = snapshot.timestamp - prevSnapshotTs.current
         if (frameTimeMs > 0 && frameTimeMs < 5000) {
           setFrameTimes((prev) => {
-            const next = [...prev, {
-              timestamp: snapshot.timestamp,
-              frameTimeMs,
-              budgetMs: 16.67,
-            }]
-            return next.slice(-MAX_FRAME_TIMES)
+            const item = { timestamp: snapshot.timestamp, frameTimeMs, budgetMs: 16.67 }
+            if (prev.length >= MAX_FRAME_TIMES) {
+              const trimmed = prev.slice(1)
+              trimmed.push(item)
+              return trimmed
+            }
+            return [...prev, item]
           })
         }
       }
@@ -204,24 +256,31 @@ export default function Panel() {
 
       // Track memory over time
       setMemoryData((prev) => {
-        const next = [
-          ...prev,
-          {
-            timestamp: snapshot.timestamp,
-            ramMB: snapshot.ramBytes / (1024 * 1024),
-            heapUsedMB: snapshot.jsHeapUsedBytes / (1024 * 1024),
-            heapTotalMB: snapshot.jsHeapTotalBytes / (1024 * 1024),
-          },
-        ]
-        return next.slice(-MAX_MEMORY_POINTS)
+        const item = {
+          timestamp: snapshot.timestamp,
+          ramMB: snapshot.ramBytes / (1024 * 1024),
+          heapUsedMB: snapshot.jsHeapUsedBytes / (1024 * 1024),
+          heapTotalMB: snapshot.jsHeapTotalBytes / (1024 * 1024),
+        }
+        if (prev.length >= MAX_MEMORY_POINTS) {
+          const trimmed = prev.slice(1)
+          trimmed.push(item)
+          return trimmed
+        }
+        return [...prev, item]
       })
 
-      // Track stutter events
+      // Track stutter events (capped)
       if (snapshot.stutterCount > prevStutterCount.current) {
-        setStutterEvents((prev) => [
-          ...prev,
-          { timestamp: snapshot.timestamp, droppedFrames: snapshot.droppedFrames },
-        ])
+        setStutterEvents((prev) => {
+          const item = { timestamp: snapshot.timestamp, droppedFrames: snapshot.droppedFrames }
+          if (prev.length >= MAX_STUTTER_EVENTS) {
+            const trimmed = prev.slice(1)
+            trimmed.push(item)
+            return trimmed
+          }
+          return [...prev, item]
+        })
       }
       prevStutterCount.current = snapshot.stutterCount
 
@@ -232,6 +291,18 @@ export default function Panel() {
     plugin.onMessage('perf-history', (h: FPSHistory) => {
       setHistory(h)
     })
+
+    plugin.onMessage('arch-info', (info: ArchInfo) => {
+      setArchInfo(info)
+    })
+
+    plugin.onMessage('startup-timing', (timing: StartupTiming) => {
+      setStartupTiming(timing)
+    })
+
+    // Request arch info and startup timing on connect
+    plugin.send('request-arch-info', {} as Record<string, never>)
+    plugin.send('request-startup-timing', {} as Record<string, never>)
   }, [plugin, checkAlerts])
 
   const handleStart = useCallback(() => {
@@ -260,6 +331,18 @@ export default function Panel() {
   const handleClearAlerts = useCallback(() => {
     setAlerts([])
   }, [])
+
+  const handleClearData = useCallback(() => {
+    plugin?.send('clear-data', {} as Record<string, never>)
+    setHistory(null)
+    setMemoryData([])
+    setStutterEvents([])
+    setFrameTimes([])
+    setAlerts([])
+    setFpsData([])
+    prevStutterCount.current = 0
+    prevSnapshotTs.current = 0
+  }, [plugin])
 
   return (
     <div style={{
@@ -295,6 +378,21 @@ export default function Panel() {
             }}
           >
             {isMonitoring ? 'Stop' : 'Start'}
+          </button>
+          <button
+            onClick={handleClearData}
+            style={{
+              background: '#1a1a2e',
+              color: '#fff',
+              border: '1px solid #555',
+              borderRadius: 6,
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Clear Data
           </button>
           <button
             onClick={handleReset}
@@ -424,6 +522,140 @@ export default function Panel() {
         </div>
       )}
 
+      {/* ==================== NEW ARCH TAB ==================== */}
+      {activeTab === 'new-arch' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Architecture Info */}
+          <div style={{ background: '#1e1e1e', borderRadius: 8, padding: 16 }}>
+            <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
+              Architecture Info
+            </div>
+            {archInfo ? (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                    <td style={tdStyle}>Fabric</td>
+                    <td style={{ ...tdStyle, color: archInfo.isFabric ? '#4CAF50' : '#888', fontWeight: 600 }}>
+                      {archInfo.isFabric ? 'Enabled' : 'Disabled'}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                    <td style={tdStyle}>Bridgeless</td>
+                    <td style={{ ...tdStyle, color: archInfo.isBridgeless ? '#4CAF50' : '#888', fontWeight: 600 }}>
+                      {archInfo.isBridgeless ? 'Enabled' : 'Disabled'}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                    <td style={tdStyle}>JS Engine</td>
+                    <td style={{ ...tdStyle, fontWeight: 600 }}>{archInfo.jsEngine.toUpperCase()}</td>
+                  </tr>
+                  <tr>
+                    <td style={tdStyle}>React Native</td>
+                    <td style={{ ...tdStyle, fontWeight: 600 }}>{archInfo.reactNativeVersion}</td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : (
+              <div style={{ color: '#888', fontSize: 12, textAlign: 'center', padding: 12 }}>
+                Waiting for arch info...
+              </div>
+            )}
+          </div>
+
+          {/* Startup Timing */}
+          <div style={{ background: '#1e1e1e', borderRadius: 8, padding: 16 }}>
+            <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
+              Startup Timing
+            </div>
+            {startupTiming?.available ? (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  {startupTiming.nativeInitMs !== undefined && (
+                    <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                      <td style={tdStyle}>Native Init</td>
+                      <td style={{ ...tdStyle, fontWeight: 600 }}>{startupTiming.nativeInitMs.toFixed(0)}ms</td>
+                    </tr>
+                  )}
+                  {startupTiming.bundleLoadMs !== undefined && (
+                    <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                      <td style={tdStyle}>Bundle Load</td>
+                      <td style={{ ...tdStyle, fontWeight: 600 }}>{startupTiming.bundleLoadMs.toFixed(0)}ms</td>
+                    </tr>
+                  )}
+                  {startupTiming.ttiMs !== undefined && (
+                    <tr>
+                      <td style={tdStyle}>TTI</td>
+                      <td style={{ ...tdStyle, fontWeight: 600, color: startupTiming.ttiMs > 3000 ? '#F44336' : startupTiming.ttiMs > 1500 ? '#FF9800' : '#4CAF50' }}>
+                        {startupTiming.ttiMs.toFixed(0)}ms
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            ) : (
+              <div style={{ color: '#888', fontSize: 12, textAlign: 'center', padding: 12 }}>
+                {startupTiming ? 'Startup timing not available on this RN version' : 'Waiting for startup timing...'}
+              </div>
+            )}
+          </div>
+
+          {/* New Arch Metrics */}
+          <div style={{ background: '#1e1e1e', borderRadius: 8, padding: 16 }}>
+            <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
+              Runtime Metrics
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #333' }}>
+                  <th style={thStyle}>Metric</th>
+                  <th style={thStyle}>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                  <td style={tdStyle}>Long Tasks</td>
+                  <td style={{
+                    ...tdStyle,
+                    color: (metrics?.longTaskCount ?? 0) > 0 ? '#FF9800' : '#4CAF50',
+                    fontWeight: 600,
+                  }}>
+                    {metrics?.longTaskCount ?? 0} ({Math.round(metrics?.longTaskTotalMs ?? 0)}ms total)
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                  <td style={tdStyle}>Slow Events</td>
+                  <td style={{ ...tdStyle, fontWeight: 600 }}>
+                    {metrics?.slowEventCount ?? 0}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                  <td style={tdStyle}>Worst INP</td>
+                  <td style={{
+                    ...tdStyle,
+                    color: (metrics?.maxEventDurationMs ?? 0) > 200 ? '#F44336' : (metrics?.maxEventDurationMs ?? 0) > 100 ? '#FF9800' : '#4CAF50',
+                    fontWeight: 600,
+                  }}>
+                    {Math.round(metrics?.maxEventDurationMs ?? 0)}ms
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                  <td style={tdStyle}>Render Count</td>
+                  <td style={{ ...tdStyle, fontWeight: 600 }}>
+                    {metrics?.renderCount ?? 0}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={tdStyle}>Last Render</td>
+                  <td style={{ ...tdStyle, fontWeight: 600 }}>
+                    {(metrics?.lastRenderDurationMs ?? 0).toFixed(1)}ms
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* ==================== FPS ANALYSIS TAB ==================== */}
       {activeTab === 'fps' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -520,15 +752,26 @@ export default function Panel() {
                     {metrics ? (metrics.jsHeapUsedBytes / (1024 * 1024)).toFixed(1) : '--'}
                   </td>
                 </tr>
-                <tr>
-                  <td style={tdStyle}>Trend (MB/min)</td>
+                <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
+                  <td style={tdStyle}>Rate (MB/s)</td>
                   <td style={tdStyle} colSpan={2} />
                   <td style={{
                     ...tdStyle,
-                    color: memoryTrend > 1 ? '#F44336' : memoryTrend > 0.2 ? '#FF9800' : '#4CAF50',
+                    color: Math.abs(memoryRatePerSec) > 0.1 ? '#FF9800' : '#4CAF50',
                     fontWeight: 600,
                   }}>
-                    {memoryTrend >= 0 ? '+' : ''}{memoryTrend.toFixed(2)}
+                    {memoryRatePerSec >= 0 ? '+' : ''}{memoryRatePerSec.toFixed(3)}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={tdStyle}>Rate (MB/min)</td>
+                  <td style={tdStyle} colSpan={2} />
+                  <td style={{
+                    ...tdStyle,
+                    color: memoryRatePerMin > 1 ? '#F44336' : memoryRatePerMin > 0.2 ? '#FF9800' : '#4CAF50',
+                    fontWeight: 600,
+                  }}>
+                    {memoryRatePerMin >= 0 ? '+' : ''}{memoryRatePerMin.toFixed(2)}
                   </td>
                 </tr>
               </tbody>

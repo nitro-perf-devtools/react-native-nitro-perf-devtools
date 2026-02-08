@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useRozeniteDevToolsClient } from '@rozenite/plugin-bridge'
-import { getPerfMonitor } from '@nitroperf/core'
-import type { PerfSnapshot, FPSHistory } from '@nitroperf/core'
+import { getPerfMonitor, getArchInfo, getStartupTiming } from '@nitroperf/core'
+import type { PerfSnapshot, FPSHistory, ArchInfo, StartupTiming } from '@nitroperf/core'
 
 interface PerfEvents {
   'perf-snapshot': PerfSnapshot
@@ -12,7 +12,12 @@ interface PerfEvents {
   'stop-monitor': Record<string, never>
   'reset-monitor': Record<string, never>
   'export-session': Record<string, never>
+  'clear-data': Record<string, never>
   'session-data': { snapshots: PerfSnapshot[]; history: FPSHistory }
+  'request-arch-info': Record<string, never>
+  'arch-info': ArchInfo
+  'request-startup-timing': Record<string, never>
+  'startup-timing': StartupTiming
 }
 
 /**
@@ -52,6 +57,10 @@ export function useNitroPerfDevTools() {
       monitor.reset()
     })
 
+    client.onMessage('clear-data', () => {
+      monitor.reset()
+    })
+
     client.onMessage('request-snapshot', () => {
       client.send('perf-snapshot', monitor.getMetrics())
     })
@@ -67,6 +76,14 @@ export function useNitroPerfDevTools() {
       })
     })
 
+    client.onMessage('request-arch-info', () => {
+      client.send('arch-info', getArchInfo())
+    })
+
+    client.onMessage('request-startup-timing', () => {
+      client.send('startup-timing', getStartupTiming())
+    })
+
     // Push periodic metric updates to the panel
     const subId = monitor.subscribe((snapshot: PerfSnapshot) => {
       client.send('perf-snapshot', snapshot)
@@ -77,7 +94,7 @@ export function useNitroPerfDevTools() {
       if (monitor.isRunning) {
         client.send('perf-history', monitor.getHistory())
       }
-    }, 1000)
+    }, 3000)
 
     return () => {
       monitor.unsubscribe(subId)

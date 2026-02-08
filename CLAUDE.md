@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-@nitroperf/core is a hybrid performance monitor for React Native that tracks UI FPS, JS FPS, RAM, JS heap, dropped frames, and stutter detection. It uses [Nitro Modules](https://github.com/nicklockwood/NitroModules) for synchronous JSI calls between JS and C++.
+@nitroperf/core is a hybrid performance monitor for React Native that tracks UI FPS, JS FPS, RAM, JS heap, dropped frames, stutter detection, long tasks, slow events (INP proxy), and React render profiling. It uses [Nitro Modules](https://github.com/nicklockwood/NitroModules) for synchronous JSI calls between JS and C++.
 
 The library ships as two npm packages in a monorepo:
 - **@nitroperf/core** — the core Nitro module (C++ + TS)
@@ -47,6 +47,10 @@ rm -rf lib nitrogen/generated  # Clean build artifacts
 React App (JS/TS)
 ├── usePerfMetrics() hook — auto-starts monitor, subscribes to updates, returns reactive state
 ├── <PerfOverlay /> — draggable floating widget (compact/expanded views)
+├── <PerfProfiler /> — opt-in React.Profiler wrapper for render duration tracking
+├── getArchInfo() — detect Fabric, Bridgeless, JS engine, RN version
+├── getStartupTiming() — native init, bundle load, TTI timings
+├── observers.ts — PerformanceObserver for long tasks + event timing, JS heap polling
 └── Dev menu integration — toggle overlay from RN dev menu
 
 Nitro Modules Bridge (JSI, synchronous)
@@ -56,13 +60,17 @@ Nitro Modules Bridge (JSI, synchronous)
     ├── PlatformMetrics (abstract, platform-specific implementations)
     │   ├── iOS: CADisplayLink (UI+JS FPS), task_info/Mach APIs (RAM)
     │   └── Android: Choreographer via JNI (UI FPS), /proc/self/status (RAM)
+    ├── JS→C++ report methods (reportLongTask, reportSlowEvent, reportRender, reportJsHeap)
+    │   └── Lock-free atomics, same pattern as reportJsFrameTick
     └── Timer thread — periodically notifies subscribers
 
 DevTools (browser)
-└── Rozenite plugin bridge (CDP) → Panel with Recharts (FPS line, memory area, stutter timeline)
+└── Rozenite plugin bridge (CDP) → Panel with Recharts (FPS line, memory area, stutter timeline, New Arch tab)
 ```
 
 **Key architectural detail**: On iOS, both UI and JS FPS are tracked natively via CADisplayLink. On Android, UI FPS uses Choreographer→JNI→C++, but JS FPS is tracked from the JS side using `requestAnimationFrame` → `reportJsFrameTick()`.
+
+**New Arch metrics flow**: JS-side observers (PerformanceObserver for long tasks/event timing, setInterval for heap polling) collect data and report to C++ via `reportLongTask()`, `reportSlowEvent()`, `reportJsHeap()`. React Profiler data flows via `reportRender()`. All use lock-free atomics in C++ and are included in `PerfSnapshot` for the timer-driven subscriber pipeline. Observers gracefully degrade on older RN versions or when the native binary hasn't been rebuilt (runtime method-existence checks).
 
 ## Key Source Paths
 
@@ -70,6 +78,10 @@ DevTools (browser)
 - **C++ core**: `packages/core/cpp/` — HybridPerfMonitor, FPSTracker, PlatformMetrics
 - **iOS native**: `packages/core/cpp/PlatformMetrics_iOS.mm`
 - **Android native**: `packages/core/cpp/PlatformMetrics_Android.cpp` + `android/src/main/java/com/nitroperf/PerfMetricsProvider.kt`
+- **JS observers**: `packages/core/src/observers.ts` — PerformanceObserver + heap polling lifecycle
+- **Arch detection**: `packages/core/src/archDetection.ts` — Fabric, Bridgeless, JS engine, RN version
+- **Startup timing**: `packages/core/src/startupTiming.ts` — native init, bundle load, TTI
+- **React Profiler**: `packages/core/src/PerfProfiler.tsx` — opt-in render duration tracking
 - **Nitrogen config**: `packages/core/nitro.json` — maps `PerfMonitor` → `HybridPerfMonitor`, namespace `nitroperf`
 - **Podspec**: `packages/core/NitroPerf.podspec` (iOS 13+, C++20)
 - **Android build**: `packages/core/android/build.gradle` + `CMakeLists.txt` (SDK 24+, C++20)
@@ -93,3 +105,15 @@ When changing the Nitro spec (`specs/nitro-perf.nitro.ts`):
 ## Stutter Detection
 
 A "stutter" is defined as a 1-second window with 4+ dropped frames (frames below target FPS). This is tracked in `FPSTracker.cpp` and surfaced through `PerfSnapshot.stutterCount`.
+
+## New Architecture Metrics
+
+`PerfSnapshot` includes fields for RN 0.82+ W3C Performance APIs:
+- `longTaskCount` / `longTaskTotalMs` — cumulative tasks >50ms (via PerformanceObserver `longtask` type)
+- `slowEventCount` / `maxEventDurationMs` — events >100ms as INP proxy (via PerformanceObserver `event` type)
+- `renderCount` / `lastRenderDurationMs` — React Profiler render data (opt-in via `<PerfProfiler>`)
+- `jsHeapUsedBytes` / `jsHeapTotalBytes` — now populated via HermesInternal or performance.memory polling
+
+Pure-JS utilities (not in PerfSnapshot):
+- `getArchInfo()` — returns `{ isFabric, isBridgeless, jsEngine, reactNativeVersion }`
+- `getStartupTiming()` — returns `{ available, nativeInitMs, bundleLoadMs, ttiMs }`

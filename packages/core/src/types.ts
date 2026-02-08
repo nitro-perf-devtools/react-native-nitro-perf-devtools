@@ -1,4 +1,8 @@
+import type { PerfSnapshot, FPSHistory } from './specs/nitro-perf.nitro'
+
 export type { PerfSnapshot, FPSHistory, PerfConfig, PerfMonitor } from './specs/nitro-perf.nitro'
+export type { ArchInfo } from './archDetection'
+export type { StartupTiming } from './startupTiming'
 
 export interface PerfMetricsState {
   metrics: PerfSnapshot | null

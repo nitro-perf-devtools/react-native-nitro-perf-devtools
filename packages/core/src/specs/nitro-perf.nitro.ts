@@ -9,6 +9,12 @@ export interface PerfSnapshot {
   droppedFrames: number
   stutterCount: number
   timestamp: number
+  longTaskCount: number
+  longTaskTotalMs: number
+  slowEventCount: number
+  maxEventDurationMs: number
+  renderCount: number
+  lastRenderDurationMs: number
 }
 
 export interface FPSHistory {
@@ -36,6 +42,10 @@ export interface PerfMonitor
   subscribe(cb: (m: PerfSnapshot) => void): number
   unsubscribe(id: number): void
   reportJsFrameTick(ts: number): void
+  reportLongTask(durationMs: number): void
+  reportSlowEvent(durationMs: number): void
+  reportRender(actualDurationMs: number): void
+  reportJsHeap(usedBytes: number, totalBytes: number): void
   configure(config: PerfConfig): void
   reset(): void
 }

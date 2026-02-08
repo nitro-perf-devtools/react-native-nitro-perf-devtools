@@ -63,6 +63,10 @@ namespace margelo::nitro::nitroperf {
       virtual double subscribe(const std::function<void(const PerfSnapshot& /* m */)>& cb) = 0;
       virtual void unsubscribe(double id) = 0;
       virtual void reportJsFrameTick(double ts) = 0;
+      virtual void reportLongTask(double durationMs) = 0;
+      virtual void reportSlowEvent(double durationMs) = 0;
+      virtual void reportRender(double actualDurationMs) = 0;
+      virtual void reportJsHeap(double usedBytes, double totalBytes) = 0;
       virtual void configure(const PerfConfig& config) = 0;
       virtual void reset() = 0;
 

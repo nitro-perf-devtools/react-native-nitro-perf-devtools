@@ -14,7 +14,6 @@ import { StatusBar } from 'expo-status-bar'
 import {
   PerfOverlay,
   registerDevMenuItem,
-  usePerfMetrics,
 } from '@nitroperf/core'
 import { useNitroPerfDevTools } from '@nitroperf/devtools'
 import { WorkletDemo } from './demos/WorkletDemo'
@@ -391,7 +390,6 @@ function TabBar({ active, onChange }: { active: DemoTab; onChange: (tab: DemoTab
 export default function App() {
   const [showOverlay, setShowOverlay] = useState(true)
   const [activeTab, setActiveTab] = useState<DemoTab>('scroll')
-  usePerfMetrics({ updateIntervalMs: 300 })
   useNitroPerfDevTools()
 
   useEffect(() => {
