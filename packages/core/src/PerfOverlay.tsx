@@ -97,13 +97,13 @@ function CompactView({
       style={styles.compactContainer}
     >
       <View style={styles.compactRow}>
+        <Text style={styles.ramLabel}>{formatBytes(ram)}</Text>
         <Text style={[styles.fpsLabel, { color: getFpsColor(uiFps) }]}>
           UI {Math.round(uiFps)}
         </Text>
         <Text style={[styles.fpsLabel, { color: getFpsColor(jsFps) }]}>
           JS {Math.round(jsFps)}
         </Text>
-        <Text style={styles.ramLabel}>{formatBytes(ram)}</Text>
         {onClose && (
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeText}>x</Text>
