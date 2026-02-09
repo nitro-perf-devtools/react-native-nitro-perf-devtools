@@ -56,7 +56,7 @@ const config = {
         content: '🇵🇸 Free Palestine',
         backgroundColor: '#009736',
         textColor: '#fff',
-        isCloseable: true,
+        isCloseable: false,
       },
       navbar: {
         title: 'NitroPerf',
