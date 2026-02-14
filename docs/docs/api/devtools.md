@@ -20,7 +20,7 @@ npm install @nitroperf/devtools
 import { useNitroPerfDevTools } from '@nitroperf/devtools';
 
 function App() {
-  useNitroPerfDevTools(); // Bridges metrics to DevTools panel
+  useNitroPerfDevTools({ enableAIInsights: true }); // Bridges metrics to DevTools panel with AI analysis
   return <YourApp />;
 }
 ```
@@ -37,7 +37,7 @@ Then open DevTools and navigate to the **Performance** tab.
 
 ### Features
 
-The DevTools panel provides seven tabs for comprehensive performance analysis:
+The DevTools panel provides eight tabs for comprehensive performance analysis:
 
 #### Diagnostics Tab
 
@@ -76,6 +76,13 @@ The DevTools panel provides seven tabs for comprehensive performance analysis:
 - **Stutter Timeline** -- A horizontal timeline with severity-colored markers. Stutters are classified as minor, moderate, or severe based on the number of dropped frames in the detection window.
 - **Stutter Event Log** -- A timestamped table listing all detected stutter events with details including severity, dropped frame count, and the FPS at the time of the event.
 - **Statistics** -- Summary statistics showing min, max, and current values for all tracked metrics.
+
+#### AI Insights Tab
+
+- **Heuristic Analysis** -- Rule-based insights that run locally without an API key. Detects memory leaks, thread bottlenecks, GC pressure, render storms, slow events, frame budget violations, and component hotspots.
+- **LLM Analysis** -- Connect your own API key for deep, component-specific performance analysis. Built-in support for Claude, Gemini, OpenAI, and xAI — plus a "Custom" option for any OpenAI-compatible API (Together, Groq, Fireworks, Kimi, Minimax, etc.). The LLM receives all metrics including per-component render breakdowns and returns actionable code-level fixes.
+- **Auto Mode** -- Toggle continuous analysis every 15 seconds for hands-free monitoring.
+- **Timeline View** -- Insights displayed as expandable cards on a severity-colored timeline with copy-to-clipboard support.
 
 #### Session Tab
 

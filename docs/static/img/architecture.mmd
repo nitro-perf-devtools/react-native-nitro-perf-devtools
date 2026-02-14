@@ -1,25 +1,3 @@
----
-sidebar_position: 1
-slug: /
----
-
-# Introduction
-
-**@nitroperf/core** is a hybrid performance monitor for React Native that tracks UI FPS, JS FPS, RAM, JS heap, dropped frames, stutter detection, long tasks, slow events (INP proxy), and React render profiling, powered by [Nitro Modules](https://github.com/mrousavy/nitro).
-
-## Three Consumption Modes
-
-1. **On-device overlay** — draggable floating widget showing FPS + RAM
-2. **React hook** — `usePerfMetrics()` returns reactive performance state
-3. **Rozenite DevTools panel** — rich web charts (FPS line chart, memory area chart, stutter timeline)
-
-<div style={{textAlign: 'center'}}>
-  <img src="/img/overlay-compact.png" alt="NitroPerf overlay showing real-time performance metrics" width="300" />
-</div>
-
-## Architecture
-
-```mermaid
 graph TB
     subgraph CPP["C++ Core (Nitro HybridObject)"]
         HM["HybridPerfMonitor"]
@@ -79,11 +57,3 @@ graph TB
     HM -->|"CDP Bridge"| DT
     DT -->|"PerfSnapshot"| HEU
     DT -->|"PerfSnapshot + Component Stats"| LLM
-```
-
-## Requirements
-
-- React Native >= 0.73
-- react-native-nitro-modules >= 0.19.0
-- iOS 13+
-- Android SDK 24+

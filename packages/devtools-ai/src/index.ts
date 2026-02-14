@@ -1,2 +1,5 @@
 export { analyzePerformance, type AIInsight, type AIAnalysisInput, type ComponentRenderStats } from './lib/aiInsights'
 export { analyzeWithClaude, type ClaudeAnalysisInput } from './lib/claudeClient'
+export { analyzeWithOpenAICompatible, analyzeWithOpenAI, type OpenAICompatibleOptions } from './lib/openaiClient'
+export { analyzeWithGemini } from './lib/geminiClient'
+export type { LLMAnalysisInput } from './lib/shared'

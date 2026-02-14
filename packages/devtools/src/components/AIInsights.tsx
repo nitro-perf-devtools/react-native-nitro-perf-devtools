@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { analyzePerformance, analyzeWithClaude } from '@nitroperf/devtools-ai'
+import { analyzePerformance, analyzeWithClaude, analyzeWithOpenAICompatible, analyzeWithGemini } from '@nitroperf/devtools-ai'
 
 interface PerfSnapshot {
   uiFps: number
@@ -74,16 +74,6 @@ interface AIInsight {
   category: 'memory' | 'cpu' | 'render' | 'architecture'
 }
 
-interface AIAnalysisInput {
-  metrics: PerfSnapshot | null
-  history: FPSHistory | null
-  memoryData: MemoryDataPoint[]
-  stutterEvents: StutterEvent[]
-  frameTimes: FrameTimeEntry[]
-  fpsData: { uiFps: number; jsFps: number }[]
-  componentStats?: ComponentRenderStats[]
-}
-
 interface AIInsightsProps {
   metrics: PerfSnapshot | null
   history: FPSHistory | null
@@ -94,6 +84,66 @@ interface AIInsightsProps {
   componentRenderStats: ComponentRenderStats[]
   archInfo: ArchInfo | null
 }
+
+type ProviderType = 'claude' | 'gemini' | 'openai-compat'
+
+interface ProviderPreset {
+  id: string
+  label: string
+  type: ProviderType
+  color: string
+  placeholder: string
+  keyLink: string
+  endpoint?: string
+  model?: string
+}
+
+const PRESETS: ProviderPreset[] = [
+  {
+    id: 'claude',
+    label: 'Claude',
+    type: 'claude',
+    color: '#D4A574',
+    placeholder: 'sk-ant-...',
+    keyLink: 'https://console.anthropic.com/settings/keys',
+  },
+  {
+    id: 'gemini',
+    label: 'Gemini',
+    type: 'gemini',
+    color: '#4285F4',
+    placeholder: 'AIza...',
+    keyLink: 'https://aistudio.google.com/apikey',
+  },
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    type: 'openai-compat',
+    color: '#10A37F',
+    placeholder: 'sk-...',
+    keyLink: 'https://platform.openai.com/api-keys',
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    model: 'gpt-4.1',
+  },
+  {
+    id: 'xai',
+    label: 'xAI',
+    type: 'openai-compat',
+    color: '#FFFFFF',
+    placeholder: 'xai-...',
+    keyLink: 'https://console.x.ai',
+    endpoint: 'https://api.x.ai/v1/chat/completions',
+    model: 'grok-3',
+  },
+  {
+    id: 'custom',
+    label: 'Custom',
+    type: 'openai-compat',
+    color: '#888',
+    placeholder: 'API key',
+    keyLink: '',
+  },
+]
 
 const severityColors: Record<string, string> = {
   info: '#2196F3',
@@ -107,8 +157,14 @@ const severityIcons: Record<string, string> = {
   critical: '\uD83D\uDD34',
 }
 
-const API_KEY_STORAGE_KEY = 'nitroperf-claude-api-key'
+const PROVIDER_STORAGE_KEY = 'nitroperf-llm-provider'
+const CUSTOM_ENDPOINT_KEY = 'nitroperf-custom-endpoint'
+const CUSTOM_MODEL_KEY = 'nitroperf-custom-model'
 const COOLDOWN_MS = 5000
+
+function getApiKeyStorageKey(id: string) {
+  return `nitroperf-${id}-api-key`
+}
 
 export function AIInsights({
   metrics,
@@ -120,37 +176,66 @@ export function AIInsights({
   componentRenderStats,
   archInfo,
 }: AIInsightsProps) {
-  const [apiKey, setApiKey] = useState(() => {
-    try { return localStorage.getItem(API_KEY_STORAGE_KEY) || '' } catch { return '' }
+  const [providerId, setProviderId] = useState<string>(() => {
+    try {
+      return localStorage.getItem(PROVIDER_STORAGE_KEY) || 'claude'
+    } catch { return 'claude' }
   })
-  const [claudeInsights, setClaudeInsights] = useState<AIInsight[]>([])
+
+  const preset = PRESETS.find(p => p.id === providerId) || PRESETS[0]
+
+  const [apiKey, setApiKey] = useState(() => {
+    try { return localStorage.getItem(getApiKeyStorageKey(preset.id)) || '' } catch { return '' }
+  })
+  const [customEndpoint, setCustomEndpoint] = useState(() => {
+    try { return localStorage.getItem(CUSTOM_ENDPOINT_KEY) || '' } catch { return '' }
+  })
+  const [customModel, setCustomModel] = useState(() => {
+    try { return localStorage.getItem(CUSTOM_MODEL_KEY) || '' } catch { return '' }
+  })
+  const [llmInsights, setLlmInsights] = useState<AIInsight[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [claudeError, setClaudeError] = useState<string | null>(null)
+  const [llmError, setLlmError] = useState<string | null>(null)
   const [autoMode, setAutoMode] = useState(false)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [showHeuristics, setShowHeuristics] = useState(true)
   const lastAnalysisTime = useRef(0)
-  const claudeTimestamp = useRef(new Date())
+  const llmTimestamp = useRef(new Date())
   const autoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const activePresetId = useRef(providerId)
 
-  // Persist API key
+  // Load API key when provider changes
+  useEffect(() => {
+    activePresetId.current = providerId
+    try {
+      localStorage.setItem(PROVIDER_STORAGE_KEY, providerId)
+      setApiKey(localStorage.getItem(getApiKeyStorageKey(providerId)) || '')
+    } catch {}
+    setLlmError(null)
+  }, [providerId])
+
   const handleApiKeyChange = useCallback((key: string) => {
     setApiKey(key)
     try {
-      if (key) {
-        localStorage.setItem(API_KEY_STORAGE_KEY, key)
-      } else {
-        localStorage.removeItem(API_KEY_STORAGE_KEY)
-      }
-    } catch {
-      // localStorage unavailable
-    }
+      const storageKey = getApiKeyStorageKey(activePresetId.current)
+      if (key) localStorage.setItem(storageKey, key)
+      else localStorage.removeItem(storageKey)
+    } catch {}
+  }, [])
+
+  const handleCustomEndpointChange = useCallback((v: string) => {
+    setCustomEndpoint(v)
+    try { localStorage.setItem(CUSTOM_ENDPOINT_KEY, v) } catch {}
+  }, [])
+
+  const handleCustomModelChange = useCallback((v: string) => {
+    setCustomModel(v)
+    try { localStorage.setItem(CUSTOM_MODEL_KEY, v) } catch {}
   }, [])
 
   const heuristicInsights = useMemo((): AIInsight[] => {
     if (!metrics) return []
-
     return analyzePerformance({
       metrics,
       history,
@@ -162,20 +247,19 @@ export function AIInsights({
     })
   }, [metrics, history, memoryData, stutterEvents, frameTimes, fpsData, componentRenderStats])
 
-  const handleAnalyzeWithClaude = useCallback(async () => {
+  const handleAnalyze = useCallback(async () => {
     if (!metrics || !apiKey.trim() || isAnalyzing) return
 
     const now = Date.now()
     if (now - lastAnalysisTime.current < COOLDOWN_MS) {
-      setClaudeError(`Please wait ${Math.ceil((COOLDOWN_MS - (now - lastAnalysisTime.current)) / 1000)}s before analyzing again.`)
+      setLlmError(`Please wait ${Math.ceil((COOLDOWN_MS - (now - lastAnalysisTime.current)) / 1000)}s before analyzing again.`)
       return
     }
 
     setIsAnalyzing(true)
-    setClaudeError(null)
+    setLlmError(null)
 
     try {
-      // Compute memory trend
       let memoryTrendMBPerMin: number | undefined
       if (memoryData.length >= 5) {
         const recent = memoryData.slice(-30)
@@ -187,14 +271,12 @@ export function AIInsights({
         }
       }
 
-      // Compute stutter rate
       let stutterRate: number | undefined
       if (stutterEvents.length > 0) {
-        const now = Date.now()
-        stutterRate = stutterEvents.filter(e => now - e.timestamp < 60000).length
+        stutterRate = stutterEvents.filter(e => Date.now() - e.timestamp < 60000).length
       }
 
-      const result = await analyzeWithClaude(apiKey.trim(), {
+      const analysisInput = {
         metrics: {
           uiFps: metrics.uiFps,
           jsFps: metrics.jsFps,
@@ -215,29 +297,47 @@ export function AIInsights({
         stutterRate,
         componentStats: componentRenderStats.length > 0 ? componentRenderStats : undefined,
         archInfo: archInfo || undefined,
-      })
+      }
 
-      setClaudeInsights(result)
-      claudeTimestamp.current = new Date()
+      const currentPreset = PRESETS.find(p => p.id === activePresetId.current) || PRESETS[0]
+      let result: AIInsight[]
+
+      switch (currentPreset.type) {
+        case 'claude':
+          result = await analyzeWithClaude(apiKey.trim(), analysisInput)
+          break
+        case 'gemini':
+          result = await analyzeWithGemini(apiKey.trim(), analysisInput)
+          break
+        case 'openai-compat': {
+          const endpoint = currentPreset.id === 'custom'
+            ? (customEndpoint.trim() || undefined)
+            : currentPreset.endpoint
+          const model = currentPreset.id === 'custom'
+            ? (customModel.trim() || undefined)
+            : currentPreset.model
+          result = await analyzeWithOpenAICompatible(apiKey.trim(), analysisInput, { endpoint, model })
+          break
+        }
+      }
+
+      setLlmInsights(result)
+      llmTimestamp.current = new Date()
       lastAnalysisTime.current = Date.now()
     } catch (err) {
-      setClaudeError(err instanceof Error ? err.message : 'Analysis failed')
+      setLlmError(err instanceof Error ? err.message : 'Analysis failed')
     } finally {
       setIsAnalyzing(false)
     }
-  }, [metrics, apiKey, isAnalyzing, memoryData, stutterEvents, history, componentRenderStats, archInfo])
+  }, [metrics, apiKey, isAnalyzing, memoryData, stutterEvents, history, componentRenderStats, archInfo, customEndpoint, customModel])
 
-  // Auto-analyze on interval
   useEffect(() => {
     if (autoMode && apiKey.trim() && metrics) {
-      // Run immediately on toggle
-      handleAnalyzeWithClaude()
-
+      handleAnalyze()
       autoIntervalRef.current = setInterval(() => {
-        handleAnalyzeWithClaude()
+        handleAnalyze()
       }, 15000)
     }
-
     return () => {
       if (autoIntervalRef.current) {
         clearInterval(autoIntervalRef.current)
@@ -246,15 +346,14 @@ export function AIInsights({
     }
   }, [autoMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Merge heuristic + Claude insights with timestamps, sorted by severity
   const allInsights = useMemo(() => {
     const now = new Date()
     const hWithTs = showHeuristics ? heuristicInsights.map(i => ({ ...i, timestamp: now })) : []
-    const cWithTs = claudeInsights.map(i => ({ ...i, timestamp: claudeTimestamp.current }))
+    const cWithTs = llmInsights.map(i => ({ ...i, timestamp: llmTimestamp.current }))
     const merged = [...hWithTs, ...cWithTs]
     const severityOrder = { critical: 0, warning: 1, info: 2 }
     return merged.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
-  }, [heuristicInsights, claudeInsights, showHeuristics])
+  }, [heuristicInsights, llmInsights, showHeuristics])
 
   if (!metrics) {
     return (
@@ -271,9 +370,12 @@ export function AIInsights({
     )
   }
 
+  const isCustom = preset.id === 'custom'
+  const canAnalyze = apiKey.trim() && (!isCustom || (customEndpoint.trim() && customModel.trim()))
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Claude API Section */}
+      {/* LLM Provider Section */}
       <div style={{
         background: '#1e1e1e',
         borderRadius: 8,
@@ -288,13 +390,77 @@ export function AIInsights({
           alignItems: 'center',
           gap: 8,
         }}>
-          <span style={{ color: '#D4A574' }}>&#9733;</span>
-          Claude AI Analysis
+          <span style={{ color: preset.color }}>&#9733;</span>
+          LLM Analysis
         </div>
+
+        {/* Provider selector */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
+          {PRESETS.map(p => {
+            const isActive = providerId === p.id
+            return (
+              <button
+                key={p.id}
+                onClick={() => setProviderId(p.id)}
+                style={{
+                  background: isActive ? `${p.color}20` : 'transparent',
+                  border: `1px solid ${isActive ? p.color : '#333'}`,
+                  borderRadius: 6,
+                  padding: '5px 12px',
+                  fontSize: 12,
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? p.color : '#888',
+                  cursor: 'pointer',
+                }}
+              >
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Custom endpoint/model fields */}
+        {isCustom && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              type="text"
+              placeholder="Endpoint URL (OpenAI-compatible)"
+              value={customEndpoint}
+              onChange={(e) => handleCustomEndpointChange(e.target.value)}
+              style={{
+                flex: 1,
+                background: '#0d0d0d',
+                border: '1px solid #333',
+                borderRadius: 6,
+                padding: '8px 12px',
+                color: '#ccc',
+                fontSize: 13,
+                outline: 'none',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Model name"
+              value={customModel}
+              onChange={(e) => handleCustomModelChange(e.target.value)}
+              style={{
+                width: 160,
+                background: '#0d0d0d',
+                border: '1px solid #333',
+                borderRadius: 6,
+                padding: '8px 12px',
+                color: '#ccc',
+                fontSize: 13,
+                outline: 'none',
+              }}
+            />
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             type="password"
-            placeholder="Anthropic API key (sk-ant-...)"
+            placeholder={preset.placeholder}
             value={apiKey}
             onChange={(e) => handleApiKeyChange(e.target.value)}
             style={{
@@ -309,26 +475,26 @@ export function AIInsights({
             }}
           />
           <button
-            onClick={handleAnalyzeWithClaude}
-            disabled={isAnalyzing || !apiKey.trim()}
+            onClick={handleAnalyze}
+            disabled={isAnalyzing || !canAnalyze}
             style={{
-              background: isAnalyzing ? '#333' : '#D4A574',
+              background: isAnalyzing ? '#333' : preset.color,
               color: isAnalyzing ? '#888' : '#000',
               border: 'none',
               borderRadius: 6,
               padding: '8px 16px',
               fontSize: 13,
               fontWeight: 600,
-              cursor: isAnalyzing || !apiKey.trim() ? 'not-allowed' : 'pointer',
+              cursor: isAnalyzing || !canAnalyze ? 'not-allowed' : 'pointer',
               whiteSpace: 'nowrap',
-              opacity: !apiKey.trim() ? 0.5 : 1,
+              opacity: !canAnalyze ? 0.5 : 1,
             }}
           >
-            {isAnalyzing ? 'Analyzing...' : 'Analyze with Claude'}
+            {isAnalyzing ? 'Analyzing...' : `Analyze with ${preset.label}`}
           </button>
           <button
             onClick={() => setAutoMode(!autoMode)}
-            disabled={!apiKey.trim()}
+            disabled={!canAnalyze}
             style={{
               background: autoMode ? '#4CAF50' : '#1a1a2e',
               color: autoMode ? '#000' : '#888',
@@ -337,21 +503,21 @@ export function AIInsights({
               padding: '8px 12px',
               fontSize: 13,
               fontWeight: 600,
-              cursor: !apiKey.trim() ? 'not-allowed' : 'pointer',
+              cursor: !canAnalyze ? 'not-allowed' : 'pointer',
               whiteSpace: 'nowrap',
-              opacity: !apiKey.trim() ? 0.5 : 1,
+              opacity: !canAnalyze ? 0.5 : 1,
             }}
           >
             {autoMode ? 'Auto: ON' : 'Auto'}
           </button>
         </div>
-        {claudeError && (
+        {llmError && (
           <div style={{
             color: '#F44336',
             fontSize: 12,
             marginTop: 8,
           }}>
-            {claudeError}
+            {llmError}
           </div>
         )}
         <div style={{
@@ -359,12 +525,19 @@ export function AIInsights({
           fontSize: 11,
           marginTop: 8,
         }}>
-          Your API key is stored locally in your browser and sent directly to the Anthropic API.
-          {' '}<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" style={{ color: '#D4A574' }}>Get an API key</a>
+          Your API key is stored locally and sent directly to the provider.
+          {preset.keyLink && (
+            <>
+              {' '}<a href={preset.keyLink} target="_blank" rel="noopener noreferrer" style={{ color: preset.color }}>Get an API key</a>
+            </>
+          )}
+          {isCustom && (
+            <span> &middot; Any OpenAI-compatible API works (Together, Groq, Fireworks, Kimi, Minimax, etc.)</span>
+          )}
         </div>
       </div>
 
-      {/* Results header — always visible */}
+      {/* Results header */}
       <div style={{
         background: '#1e1e1e',
         borderRadius: 8,
@@ -438,7 +611,7 @@ export function AIInsights({
             }} />
 
             {allInsights.map((insight, idx) => {
-              const isClaude = insight.id.startsWith('claude-')
+              const isLLM = !insight.id.startsWith('heuristic-')
               const isExpanded = expandedIds.has(insight.title)
               const isLast = idx === allInsights.length - 1
               return (
@@ -494,7 +667,6 @@ export function AIInsights({
                       cursor: 'pointer',
                     }}
                   >
-                    {/* Header */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 13 }}>{severityIcons[insight.severity]}</span>
                       <span style={{
@@ -505,20 +677,20 @@ export function AIInsights({
                       }}>
                         {insight.title}
                       </span>
-                      {isClaude && (
+                      {isLLM && (
                         <span style={{
-                          color: '#D4A574',
+                          color: preset.color,
                           fontSize: 10,
                           fontWeight: 600,
-                          background: '#D4A57420',
+                          background: `${preset.color}20`,
                           padding: '1px 6px',
                           borderRadius: 3,
                           flexShrink: 0,
                         }}>
-                          &#9733; Claude
+                          &#9733; {preset.label}
                         </span>
                       )}
-                      {isClaude && (
+                      {isLLM && (
                         <span style={{ color: '#555', fontSize: 10, flexShrink: 0 }}>
                           {Math.round(insight.confidence)}% confidence
                         </span>
@@ -528,7 +700,6 @@ export function AIInsights({
                       </span>
                     </div>
 
-                    {/* Expanded */}
                     {isExpanded && (
                       <div style={{ marginTop: 10 }}>
                         <div style={{ color: '#ccc', fontSize: 12, lineHeight: 1.5, marginBottom: 10 }}>
@@ -598,8 +769,8 @@ export function AIInsights({
             fontSize: 14,
           }}>
             {!showHeuristics && heuristicInsights.length > 0
-              ? `${heuristicInsights.length} heuristic insight${heuristicInsights.length !== 1 ? 's' : ''} hidden. Toggle "Heuristics ON" above or try "Analyze with Claude".`
-              : 'No significant performance issues detected. Try "Analyze with Claude" for deeper analysis.'}
+              ? `${heuristicInsights.length} heuristic insight${heuristicInsights.length !== 1 ? 's' : ''} hidden. Toggle "Heuristics ON" above or try "Analyze with ${preset.label}".`
+              : `No significant performance issues detected. Try "Analyze with ${preset.label}" for deeper analysis.`}
           </div>
         </div>
       )}

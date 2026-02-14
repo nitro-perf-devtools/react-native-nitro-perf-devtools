@@ -21,6 +21,11 @@ const features = [
     description:
       'Rich browser-based charts via Rozenite DevTools — FPS line chart, memory area chart, stutter timeline.',
   },
+  {
+    title: 'AI Insights',
+    description:
+      'LLM-powered performance analysis with Claude, Gemini, OpenAI, xAI, or any OpenAI-compatible API. Get component-specific, actionable recommendations from your runtime metrics.',
+  },
 ];
 
 function HomepageHeader() {
@@ -45,7 +50,7 @@ function HomepageHeader() {
 
 function Feature({ title, description }) {
   return (
-    <div className={clsx('col col--4')}>
+    <div className={clsx('col col--6')}>
       <div className="text--center padding-horiz--md padding-vert--lg">
         <h3>{title}</h3>
         <p>{description}</p>
