@@ -229,6 +229,12 @@ Features:
 - Min/Max/Current statistics table
 - Start/Stop/Reset controls
 
+### AI Insights
+
+<img alt="AI Insights — LLM-powered performance analysis with per-component recommendations" src="docs/static/img/ai-insights.png" />
+
+LLM-powered performance analysis with per-component render tracking. Choose from Claude, Gemini, OpenAI, xAI, or any OpenAI-compatible API. The LLM receives all metrics including per-component render breakdowns and returns actionable, code-level fixes.
+
 ## How It Works
 
 ### iOS

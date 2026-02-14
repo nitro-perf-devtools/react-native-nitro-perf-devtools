@@ -17,6 +17,14 @@ slug: /
   <img src="/img/overlay-compact.png" alt="NitroPerf overlay showing real-time performance metrics" width="300" />
 </div>
 
+## AI Insights
+
+<div style={{textAlign: 'center'}}>
+  <img src="/img/ai-insights.png" alt="AI Insights — LLM-powered performance analysis with per-component recommendations" style={{maxWidth: '100%', borderRadius: 8}} />
+</div>
+
+LLM-powered performance analysis with per-component render tracking. Choose from Claude, Gemini, OpenAI, xAI, or any OpenAI-compatible API to get actionable, code-level fixes from your runtime metrics.
+
 ## Architecture
 
 ```mermaid
