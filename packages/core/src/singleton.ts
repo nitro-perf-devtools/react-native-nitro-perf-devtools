@@ -1,5 +1,6 @@
 import { NitroModules } from 'react-native-nitro-modules'
 import type { PerfMonitor } from './specs/nitro-perf.nitro'
+import { startObservers, stopObservers } from './observers'
 
 let perfMonitorInstance: PerfMonitor | null = null
 let jsFrameRafId: number | null = null
@@ -29,6 +30,7 @@ export function startJsFrameLoop(): void {
     }
   }
   jsFrameRafId = requestAnimationFrame(tick)
+  startObservers(monitor)
 }
 
 /**
@@ -39,4 +41,5 @@ export function stopJsFrameLoop(): void {
     cancelAnimationFrame(jsFrameRafId)
     jsFrameRafId = null
   }
+  stopObservers()
 }

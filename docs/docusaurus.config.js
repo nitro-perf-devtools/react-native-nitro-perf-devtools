@@ -51,6 +51,13 @@ const config = {
         disableSwitch: false,
         respectPrefersColorScheme: true,
       },
+      announcementBar: {
+        id: 'free_palestine',
+        content: '🇵🇸 Free Palestine',
+        backgroundColor: '#009736',
+        textColor: '#fff',
+        isCloseable: false,
+      },
       navbar: {
         title: 'NitroPerf',
         items: [

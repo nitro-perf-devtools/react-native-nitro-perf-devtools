@@ -1,0 +1,25 @@
+{
+  "name": "@nitroperf/devtools-ai",
+  "version": "0.1.0",
+  "description": "AI-powered insights for Nitro Perf DevTools — root cause analysis and performance recommendations",
+  "main": "src/index.ts",
+  "files": [
+    "src",
+    "lib"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "nitroperf",
+    "devtools",
+    "ai",
+    "performance",
+    "react-native",
+    "fps"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@nitroperf/devtools": ">=0.1.0"
+  }
+}

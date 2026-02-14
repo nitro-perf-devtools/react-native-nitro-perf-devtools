@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -24,7 +24,7 @@ interface PerfOverlayProps {
 const COMPACT_WIDTH = 180
 const COMPACT_HEIGHT = 48
 const EXPANDED_WIDTH = 260
-const EXPANDED_HEIGHT = 320
+const EXPANDED_HEIGHT = 420
 
 function getFpsColor(fps: number): string {
   if (fps >= 55) return '#4CAF50' // Green
@@ -36,6 +36,12 @@ function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B'
   const mb = bytes / (1024 * 1024)
   return `${mb.toFixed(1)} MB`
+}
+
+function getRateColor(mbPerMin: number): string {
+  if (mbPerMin > 5) return '#F44336'
+  if (mbPerMin > 1) return '#FF9800'
+  return '#AAA'
 }
 
 /** Tiny inline sparkline bar graph */
@@ -117,13 +123,17 @@ function CompactView({
 function ExpandedView({
   metrics,
   history,
+  ramRate,
   onCollapse,
   onClose,
+  onClearData,
 }: {
   metrics: PerfSnapshot | null
   history: FPSHistory | null
+  ramRate: { perSec: number; perMin: number }
   onCollapse: () => void
   onClose?: () => void
+  onClearData: () => void
 }) {
   return (
     <View style={styles.expandedContainer}>
@@ -132,11 +142,16 @@ function ExpandedView({
         <TouchableOpacity onPress={onCollapse}>
           <Text style={styles.headerTitle}>Perf Monitor</Text>
         </TouchableOpacity>
-        {onClose && (
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>x</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <TouchableOpacity onPress={onClearData} style={styles.clearButton}>
+            <Text style={styles.clearText}>Clear</Text>
           </TouchableOpacity>
-        )}
+          {onClose && (
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeText}>x</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* FPS section */}
@@ -181,6 +196,12 @@ function ExpandedView({
           <Text style={styles.metricValue}>{formatBytes(metrics?.ramBytes ?? 0)}</Text>
         </View>
         <View style={styles.metricRow}>
+          <Text style={[styles.metricLabel, { fontSize: 9 }]}>RAM rate</Text>
+          <Text style={[styles.metricValue, { fontSize: 10, color: getRateColor(ramRate.perMin) }]}>
+            {ramRate.perMin >= 0 ? '+' : ''}{ramRate.perMin.toFixed(1)} MB/min
+          </Text>
+        </View>
+        <View style={styles.metricRow}>
           <Text style={styles.metricLabel}>JS Heap</Text>
           <Text style={styles.metricValue}>
             {formatBytes(metrics?.jsHeapUsedBytes ?? 0)} / {formatBytes(metrics?.jsHeapTotalBytes ?? 0)}
@@ -204,6 +225,49 @@ function ExpandedView({
           </Text>
         </View>
       </View>
+
+      {/* New Arch Metrics (only shown when data exists) */}
+      {((metrics?.longTaskCount ?? 0) > 0 ||
+        (metrics?.slowEventCount ?? 0) > 0 ||
+        (metrics?.renderCount ?? 0) > 0) && (
+        <View style={styles.section}>
+          {(metrics?.longTaskCount ?? 0) > 0 && (
+            <View style={styles.metricRow}>
+              <Text style={styles.metricLabel}>Long Tasks</Text>
+              <Text style={[styles.metricValue, { color: '#FF9800' }]}>
+                {Math.round(metrics!.longTaskCount)} ({Math.round(metrics!.longTaskTotalMs)}ms)
+              </Text>
+            </View>
+          )}
+          {(metrics?.slowEventCount ?? 0) > 0 && (
+            <>
+              <View style={styles.metricRow}>
+                <Text style={styles.metricLabel}>Slow Events</Text>
+                <Text style={styles.metricValue}>
+                  {Math.round(metrics!.slowEventCount)}
+                </Text>
+              </View>
+              <View style={styles.metricRow}>
+                <Text style={styles.metricLabel}>Worst INP</Text>
+                <Text style={[
+                  styles.metricValue,
+                  (metrics!.maxEventDurationMs > 200) && { color: '#F44336' },
+                ]}>
+                  {Math.round(metrics!.maxEventDurationMs)}ms
+                </Text>
+              </View>
+            </>
+          )}
+          {(metrics?.renderCount ?? 0) > 0 && (
+            <View style={styles.metricRow}>
+              <Text style={styles.metricLabel}>Renders</Text>
+              <Text style={styles.metricValue}>
+                {Math.round(metrics!.renderCount)} ({metrics!.lastRenderDurationMs.toFixed(1)}ms)
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   )
 }
@@ -214,7 +278,36 @@ export function PerfOverlay({
   initialPosition = { x: 10, y: 60 },
 }: PerfOverlayProps) {
   const [expanded, setExpanded] = useState(false)
-  const { metrics, history } = usePerfMetrics()
+  const { metrics, history, reset } = usePerfMetrics()
+
+  // Track RAM samples for rate calculation
+  const ramSamplesRef = useRef<{ ts: number; bytes: number }[]>([])
+  if (metrics) {
+    const now = metrics.timestamp
+    const samples = ramSamplesRef.current
+    samples.push({ ts: now, bytes: metrics.ramBytes })
+    // Keep last 60s of samples
+    while (samples.length > 0 && now - samples[0].ts > 60000) {
+      samples.shift()
+    }
+  }
+
+  const ramRate = useMemo(() => {
+    const samples = ramSamplesRef.current
+    if (samples.length < 2) return { perSec: 0, perMin: 0 }
+    const first = samples[0]
+    const last = samples[samples.length - 1]
+    const elapsedSec = (last.ts - first.ts) / 1000
+    if (elapsedSec <= 0) return { perSec: 0, perMin: 0 }
+    const deltaMB = (last.bytes - first.bytes) / (1024 * 1024)
+    const perSec = deltaMB / elapsedSec
+    return { perSec, perMin: perSec * 60 }
+  }, [metrics])
+
+  const handleClearData = useCallback(() => {
+    reset()
+    ramSamplesRef.current = []
+  }, [reset])
 
   const pan = useRef(new Animated.ValueXY(initialPosition)).current
 
@@ -270,8 +363,10 @@ export function PerfOverlay({
         <ExpandedView
           metrics={metrics}
           history={history}
+          ramRate={ramRate}
           onCollapse={handleCollapse}
           onClose={onClose}
+          onClearData={handleClearData}
         />
       ) : (
         <CompactView
@@ -313,6 +408,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#AAA',
     fontVariant: ['tabular-nums'],
+  },
+  clearButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  clearText: {
+    color: '#AAA',
+    fontSize: 10,
+    fontWeight: '600',
   },
   closeButton: {
     width: 20,

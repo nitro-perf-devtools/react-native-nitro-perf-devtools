@@ -13,8 +13,8 @@ import {
 import { StatusBar } from 'expo-status-bar'
 import {
   PerfOverlay,
+  PerfProfiler,
   registerDevMenuItem,
-  usePerfMetrics,
 } from '@nitroperf/core'
 import { useNitroPerfDevTools } from '@nitroperf/devtools'
 import { WorkletDemo } from './demos/WorkletDemo'
@@ -391,8 +391,7 @@ function TabBar({ active, onChange }: { active: DemoTab; onChange: (tab: DemoTab
 export default function App() {
   const [showOverlay, setShowOverlay] = useState(true)
   const [activeTab, setActiveTab] = useState<DemoTab>('scroll')
-  usePerfMetrics({ updateIntervalMs: 300 })
-  useNitroPerfDevTools()
+  useNitroPerfDevTools({ enableAIInsights: true })
 
   useEffect(() => {
     registerDevMenuItem(setShowOverlay)
@@ -412,13 +411,13 @@ export default function App() {
 
       {/* Demo content */}
       <View style={{ flex: 1 }}>
-        {activeTab === 'scroll' && <ScrollDemo />}
-        {activeTab === 'jank' && <JankDemo />}
-        {activeTab === 'memory' && <MemoryDemo />}
-        {activeTab === 'animations' && <AnimationDemo />}
-        {activeTab === 'worklets' && <WorkletDemo />}
-        {activeTab === 'rerenders' && <RerenderDemo />}
-        {activeTab === 'gc' && <GCPressureDemo />}
+        {activeTab === 'scroll' && <PerfProfiler id="ScrollDemo"><ScrollDemo /></PerfProfiler>}
+        {activeTab === 'jank' && <PerfProfiler id="JankDemo"><JankDemo /></PerfProfiler>}
+        {activeTab === 'memory' && <PerfProfiler id="MemoryDemo"><MemoryDemo /></PerfProfiler>}
+        {activeTab === 'animations' && <PerfProfiler id="AnimationDemo"><AnimationDemo /></PerfProfiler>}
+        {activeTab === 'worklets' && <PerfProfiler id="WorkletDemo"><WorkletDemo /></PerfProfiler>}
+        {activeTab === 'rerenders' && <PerfProfiler id="RerenderDemo"><RerenderDemo /></PerfProfiler>}
+        {activeTab === 'gc' && <PerfProfiler id="GCPressureDemo"><GCPressureDemo /></PerfProfiler>}
       </View>
 
       {/* Perf overlay */}

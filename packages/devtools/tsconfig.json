@@ -9,7 +9,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "outDir": "lib"
+    "outDir": "lib",
+    "paths": {
+      "@nitroperf/core": ["../core/src"],
+      "@nitroperf/devtools-ai": ["../devtools-ai/src"]
+    }
   },
   "include": ["src/**/*", "react-native.ts", "rozenite.config.ts"]
 }

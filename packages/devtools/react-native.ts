@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { useRozeniteDevToolsClient } from '@rozenite/plugin-bridge'
-import { getPerfMonitor } from '@nitroperf/core'
-import type { PerfSnapshot, FPSHistory } from '@nitroperf/core'
+import { getPerfMonitor, getArchInfo, getStartupTiming, getComponentRenderStats } from '@nitroperf/core'
+import type { PerfSnapshot, FPSHistory, ArchInfo, StartupTiming, ComponentRenderStats } from '@nitroperf/core'
 
-interface PerfEvents {
+interface PerfEvents extends Record<string, unknown> {
   'perf-snapshot': PerfSnapshot
   'perf-history': FPSHistory
   'request-snapshot': Record<string, never>
@@ -12,7 +12,18 @@ interface PerfEvents {
   'stop-monitor': Record<string, never>
   'reset-monitor': Record<string, never>
   'export-session': Record<string, never>
+  'clear-data': Record<string, never>
   'session-data': { snapshots: PerfSnapshot[]; history: FPSHistory }
+  'request-arch-info': Record<string, never>
+  'arch-info': ArchInfo
+  'request-startup-timing': Record<string, never>
+  'startup-timing': StartupTiming
+  'ai-insights-enabled': { enabled: boolean }
+  'component-render-stats': ComponentRenderStats[]
+}
+
+interface UseNitroPerfDevToolsOptions {
+  enableAIInsights?: boolean
 }
 
 /**
@@ -28,14 +39,23 @@ interface PerfEvents {
  *   return <YourApp />;
  * }
  * ```
+ *
+ * To enable AI Insights:
+ * ```tsx
+ * useNitroPerfDevTools({ enableAIInsights: true });
+ * ```
  */
-export function useNitroPerfDevTools() {
+export function useNitroPerfDevTools(options: UseNitroPerfDevToolsOptions = {}) {
+  const { enableAIInsights = false } = options
   const client = useRozeniteDevToolsClient<PerfEvents>({
     pluginId: 'nitro-perf',
   })
 
   useEffect(() => {
     if (!client) return
+
+    // Tell panel whether AI insights is enabled
+    client.send('ai-insights-enabled', { enabled: enableAIInsights })
 
     const monitor = getPerfMonitor()
 
@@ -49,6 +69,10 @@ export function useNitroPerfDevTools() {
     })
 
     client.onMessage('reset-monitor', () => {
+      monitor.reset()
+    })
+
+    client.onMessage('clear-data', () => {
       monitor.reset()
     })
 
@@ -67,6 +91,14 @@ export function useNitroPerfDevTools() {
       })
     })
 
+    client.onMessage('request-arch-info', () => {
+      client.send('arch-info', getArchInfo())
+    })
+
+    client.onMessage('request-startup-timing', () => {
+      client.send('startup-timing', getStartupTiming())
+    })
+
     // Push periodic metric updates to the panel
     const subId = monitor.subscribe((snapshot: PerfSnapshot) => {
       client.send('perf-snapshot', snapshot)
@@ -77,11 +109,22 @@ export function useNitroPerfDevTools() {
       if (monitor.isRunning) {
         client.send('perf-history', monitor.getHistory())
       }
-    }, 1000)
+    }, 3000)
+
+    // Periodically push per-component render stats
+    const componentStatsInterval = setInterval(() => {
+      if (monitor.isRunning) {
+        const stats = getComponentRenderStats()
+        if (stats.length > 0) {
+          client.send('component-render-stats', stats)
+        }
+      }
+    }, 3000)
 
     return () => {
       monitor.unsubscribe(subId)
       clearInterval(historyInterval)
+      clearInterval(componentStatsInterval)
     }
-  }, [client])
+  }, [client, enableAIInsights])
 }

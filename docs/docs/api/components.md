@@ -28,6 +28,33 @@ import { PerfOverlay } from '@nitroperf/core';
 />
 ```
 
+## `<PerfProfiler />`
+
+Opt-in wrapper around `React.Profiler` that reports render durations to the native monitor. Wrap any subtree you want to profile.
+
+### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `id` | `string` | Profiler ID (default: `'PerfProfiler'`) |
+| `children` | `ReactNode` | The subtree to profile |
+
+### Example
+
+```tsx
+import { PerfProfiler } from '@nitroperf/core';
+
+function App() {
+  return (
+    <PerfProfiler id="app">
+      <YourApp />
+    </PerfProfiler>
+  );
+}
+```
+
+Render data appears in the overlay (Renders count + last duration) and in the DevTools "New Arch" tab.
+
 ## `registerDevMenuItem(onToggle)`
 
 Adds a "Toggle Nitro Perf Monitor" entry to the React Native Dev Menu.

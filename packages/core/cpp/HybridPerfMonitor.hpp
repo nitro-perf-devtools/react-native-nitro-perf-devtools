@@ -32,6 +32,10 @@ public:
   double subscribe(const std::function<void(const PerfSnapshot&)>& cb) override;
   void unsubscribe(double id) override;
   void reportJsFrameTick(double ts) override;
+  void reportLongTask(double durationMs) override;
+  void reportSlowEvent(double durationMs) override;
+  void reportRender(double actualDurationMs) override;
+  void reportJsHeap(double usedBytes, double totalBytes) override;
   void configure(const PerfConfig& config) override;
   void reset() override;
 
@@ -60,6 +64,14 @@ private:
   // JS heap values (set from JS side or Hermes instrumentation)
   std::atomic<int64_t> jsHeapUsed_{0};
   std::atomic<int64_t> jsHeapTotal_{0};
+
+  // New architecture metrics (set from JS side via report*() methods)
+  std::atomic<int64_t> longTaskCount_{0};
+  std::atomic<int64_t> longTaskTotalMs_{0};
+  std::atomic<int64_t> slowEventCount_{0};
+  std::atomic<double> maxEventDurationMs_{0.0};
+  std::atomic<int64_t> renderCount_{0};
+  std::atomic<double> lastRenderDurationMs_{0.0};
 };
 
 } // namespace margelo::nitro::nitroperf

@@ -62,11 +62,17 @@ export function usePerfMetrics(
   useEffect(() => {
     const monitor = getMonitor()
 
-    // Subscribe to native metric updates
+    // Subscribe to native metric updates (snapshot only — no getHistory() here)
     const subId = monitor.subscribe((snapshot: PerfSnapshot) => {
       setMetrics(snapshot)
-      setHistory(monitor.getHistory())
     })
+
+    // Poll history on a slower cadence (FPSTracker only produces ~1 sample/sec)
+    const historyTimer = setInterval(() => {
+      if (monitor.isRunning) {
+        setHistory(monitor.getHistory())
+      }
+    }, 2000)
 
     if (autoStart) {
       start()
@@ -74,6 +80,7 @@ export function usePerfMetrics(
 
     return () => {
       monitor.unsubscribe(subId)
+      clearInterval(historyTimer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

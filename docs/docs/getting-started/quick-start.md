@@ -79,3 +79,24 @@ WITH_ROZENITE=true npm start
 ```
 
 Then open DevTools and navigate to the "Performance" tab.
+
+## AI Insights
+
+Enable AI-powered performance analysis in your DevTools panel:
+
+```tsx
+import { useNitroPerfDevTools } from '@nitroperf/devtools';
+
+function App() {
+  useNitroPerfDevTools({ enableAIInsights: true });
+  return <YourApp />;
+}
+```
+
+In the DevTools panel, switch to the **AI Insights** tab. You'll get heuristic-based insights immediately. For deeper LLM-powered analysis:
+
+1. Choose a provider (Claude, Gemini, OpenAI, xAI, or Custom for any OpenAI-compatible API)
+2. Enter your API key
+3. Click "Analyze" to get component-specific, actionable recommendations
+
+Your API key is stored locally in your browser and sent directly to the provider's API. Toggle **Auto** for continuous analysis every 15 seconds.

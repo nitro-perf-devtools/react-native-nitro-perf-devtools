@@ -59,7 +59,13 @@ PerfSnapshot HybridPerfMonitor::getMetrics() {
     static_cast<double>(jsHeapTotal_.load(std::memory_order_relaxed)),
     static_cast<double>(uiFpsTracker_->getDroppedFrames() + jsFpsTracker_->getDroppedFrames()),
     static_cast<double>(uiFpsTracker_->getStutterCount() + jsFpsTracker_->getStutterCount()),
-    getCurrentTimestamp()
+    getCurrentTimestamp(),
+    static_cast<double>(longTaskCount_.load(std::memory_order_relaxed)),
+    static_cast<double>(longTaskTotalMs_.load(std::memory_order_relaxed)),
+    static_cast<double>(slowEventCount_.load(std::memory_order_relaxed)),
+    maxEventDurationMs_.load(std::memory_order_relaxed),
+    static_cast<double>(renderCount_.load(std::memory_order_relaxed)),
+    lastRenderDurationMs_.load(std::memory_order_relaxed)
   );
 }
 
@@ -107,6 +113,32 @@ void HybridPerfMonitor::reportJsFrameTick(double ts) {
   jsFpsTracker_->onFrameTick(timestampSeconds);
 }
 
+void HybridPerfMonitor::reportLongTask(double durationMs) {
+  longTaskCount_.fetch_add(1, std::memory_order_relaxed);
+  longTaskTotalMs_.fetch_add(static_cast<int64_t>(durationMs), std::memory_order_relaxed);
+}
+
+void HybridPerfMonitor::reportSlowEvent(double durationMs) {
+  slowEventCount_.fetch_add(1, std::memory_order_relaxed);
+  // CAS loop to update max event duration
+  double current = maxEventDurationMs_.load(std::memory_order_relaxed);
+  while (durationMs > current) {
+    if (maxEventDurationMs_.compare_exchange_weak(current, durationMs, std::memory_order_relaxed)) {
+      break;
+    }
+  }
+}
+
+void HybridPerfMonitor::reportRender(double actualDurationMs) {
+  renderCount_.fetch_add(1, std::memory_order_relaxed);
+  lastRenderDurationMs_.store(actualDurationMs, std::memory_order_relaxed);
+}
+
+void HybridPerfMonitor::reportJsHeap(double usedBytes, double totalBytes) {
+  jsHeapUsed_.store(static_cast<int64_t>(usedBytes), std::memory_order_relaxed);
+  jsHeapTotal_.store(static_cast<int64_t>(totalBytes), std::memory_order_relaxed);
+}
+
 void HybridPerfMonitor::configure(const PerfConfig& config) {
   updateIntervalMs_.store(static_cast<int>(config.updateIntervalMs));
 
@@ -128,6 +160,12 @@ void HybridPerfMonitor::reset() {
   jsFpsTracker_->reset();
   jsHeapUsed_.store(0);
   jsHeapTotal_.store(0);
+  longTaskCount_.store(0);
+  longTaskTotalMs_.store(0);
+  slowEventCount_.store(0);
+  maxEventDurationMs_.store(0.0);
+  renderCount_.store(0);
+  lastRenderDurationMs_.store(0.0);
 }
 
 void HybridPerfMonitor::notifySubscribers() {
