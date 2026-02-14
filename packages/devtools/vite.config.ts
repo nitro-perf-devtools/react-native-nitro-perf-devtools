@@ -66,6 +66,7 @@ export default defineConfig({
     alias: {
       'react': path.resolve(monorepoRoot, 'node_modules/react'),
       'react-dom': path.resolve(monorepoRoot, 'node_modules/react-dom'),
+      '@nitroperf/devtools-ai': path.resolve(monorepoRoot, 'packages/devtools-ai/src/index.ts'),
     },
   },
 })

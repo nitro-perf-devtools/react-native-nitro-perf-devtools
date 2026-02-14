@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { useRozeniteDevToolsClient } from '@rozenite/plugin-bridge'
-import { getPerfMonitor, getArchInfo, getStartupTiming } from '@nitroperf/core'
-import type { PerfSnapshot, FPSHistory, ArchInfo, StartupTiming } from '@nitroperf/core'
+import { getPerfMonitor, getArchInfo, getStartupTiming, getComponentRenderStats } from '@nitroperf/core'
+import type { PerfSnapshot, FPSHistory, ArchInfo, StartupTiming, ComponentRenderStats } from '@nitroperf/core'
 
-interface PerfEvents {
+interface PerfEvents extends Record<string, unknown> {
   'perf-snapshot': PerfSnapshot
   'perf-history': FPSHistory
   'request-snapshot': Record<string, never>
@@ -18,6 +18,12 @@ interface PerfEvents {
   'arch-info': ArchInfo
   'request-startup-timing': Record<string, never>
   'startup-timing': StartupTiming
+  'ai-insights-enabled': { enabled: boolean }
+  'component-render-stats': ComponentRenderStats[]
+}
+
+interface UseNitroPerfDevToolsOptions {
+  enableAIInsights?: boolean
 }
 
 /**
@@ -33,14 +39,23 @@ interface PerfEvents {
  *   return <YourApp />;
  * }
  * ```
+ *
+ * To enable AI Insights:
+ * ```tsx
+ * useNitroPerfDevTools({ enableAIInsights: true });
+ * ```
  */
-export function useNitroPerfDevTools() {
+export function useNitroPerfDevTools(options: UseNitroPerfDevToolsOptions = {}) {
+  const { enableAIInsights = false } = options
   const client = useRozeniteDevToolsClient<PerfEvents>({
     pluginId: 'nitro-perf',
   })
 
   useEffect(() => {
     if (!client) return
+
+    // Tell panel whether AI insights is enabled
+    client.send('ai-insights-enabled', { enabled: enableAIInsights })
 
     const monitor = getPerfMonitor()
 
@@ -96,9 +111,20 @@ export function useNitroPerfDevTools() {
       }
     }, 3000)
 
+    // Periodically push per-component render stats
+    const componentStatsInterval = setInterval(() => {
+      if (monitor.isRunning) {
+        const stats = getComponentRenderStats()
+        if (stats.length > 0) {
+          client.send('component-render-stats', stats)
+        }
+      }
+    }, 3000)
+
     return () => {
       monitor.unsubscribe(subId)
       clearInterval(historyInterval)
+      clearInterval(componentStatsInterval)
     }
-  }, [client])
+  }, [client, enableAIInsights])
 }

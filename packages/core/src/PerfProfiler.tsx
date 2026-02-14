@@ -1,5 +1,6 @@
 import React from 'react'
 import { getPerfMonitor } from './singleton'
+import { recordRender } from './renderStore'
 
 interface PerfProfilerProps {
   id?: string
@@ -9,11 +10,12 @@ interface PerfProfilerProps {
 export function PerfProfiler({ id = 'PerfProfiler', children }: PerfProfilerProps) {
   const onRender = React.useCallback(
     (
-      _id: string,
-      _phase: 'mount' | 'update' | 'nested-update',
+      id: string,
+      phase: 'mount' | 'update' | 'nested-update',
       actualDuration: number
     ) => {
       try {
+        recordRender(id, phase, actualDuration)
         const monitor = getPerfMonitor()
         if (typeof (monitor as any).reportRender === 'function') {
           monitor.reportRender(actualDuration)

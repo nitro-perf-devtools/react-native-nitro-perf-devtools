@@ -18,6 +18,9 @@
       ],
       "@nitroperf/devtools": [
         "./packages/devtools/src"
+      ],
+      "@nitroperf/devtools-ai": [
+        "./packages/devtools-ai/src"
       ]
     }
   },

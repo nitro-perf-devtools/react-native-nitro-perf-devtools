@@ -16,6 +16,48 @@ import { CorrelationView } from './components/CorrelationView'
 import { ThreadDivergence } from './components/ThreadDivergence'
 import { GCPressureMeter } from './components/GCPressureMeter'
 import { StressTestAdvisor } from './components/StressTestAdvisor'
+import { AIInsights } from './components/AIInsights'
+
+class ErrorBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  state = { hasError: false, error: '' }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ background: '#1e1e1e', borderRadius: 8, padding: 32, textAlign: 'center' }}>
+          <div style={{ color: '#F44336', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+            Component Error
+          </div>
+          <div style={{ color: '#888', fontSize: 13, marginBottom: 12 }}>
+            {this.state.error}
+          </div>
+          <button
+            onClick={() => this.setState({ hasError: false, error: '' })}
+            style={{
+              background: '#333',
+              color: '#fff',
+              border: '1px solid #555',
+              borderRadius: 6,
+              padding: '8px 16px',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 interface PerfSnapshot {
   uiFps: number
@@ -32,6 +74,18 @@ interface PerfSnapshot {
   maxEventDurationMs: number
   renderCount: number
   lastRenderDurationMs: number
+}
+
+interface ComponentRenderStats {
+  componentId: string
+  renderCount: number
+  totalDurationMs: number
+  avgDurationMs: number
+  maxDurationMs: number
+  lastDurationMs: number
+  mountCount: number
+  updateCount: number
+  nestedUpdateCount: number
 }
 
 interface ArchInfo {
@@ -57,7 +111,7 @@ interface FPSHistory {
   jsFpsMax: number
 }
 
-interface PerfEvents {
+interface PerfEvents extends Record<string, unknown> {
   'perf-snapshot': PerfSnapshot
   'perf-history': FPSHistory
   'request-snapshot': Record<string, never>
@@ -72,6 +126,8 @@ interface PerfEvents {
   'arch-info': ArchInfo
   'request-startup-timing': Record<string, never>
   'startup-timing': StartupTiming
+  'ai-insights-enabled': { enabled: boolean }
+  'component-render-stats': ComponentRenderStats[]
 }
 
 interface MemoryDataPoint {
@@ -112,6 +168,7 @@ const TABS = [
   { id: 'memory', label: 'Memory' },
   { id: 'stutters', label: 'Stutters' },
   { id: 'session', label: 'Session' },
+  { id: 'ai-insights', label: 'AI Insights' },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -132,6 +189,8 @@ export default function Panel() {
   const [fpsData, setFpsData] = useState<{ uiFps: number; jsFps: number }[]>([])
   const [archInfo, setArchInfo] = useState<ArchInfo | null>(null)
   const [startupTiming, setStartupTiming] = useState<StartupTiming | null>(null)
+  const [aiInsightsEnabled, setAiInsightsEnabled] = useState(false)
+  const [componentRenderStats, setComponentRenderStats] = useState<ComponentRenderStats[]>([])
 
   const prevStutterCount = useRef(0)
   const prevSnapshotTs = useRef(0)
@@ -300,6 +359,14 @@ export default function Panel() {
       setStartupTiming(timing)
     })
 
+    plugin.onMessage('ai-insights-enabled', ({ enabled }) => {
+      setAiInsightsEnabled(enabled)
+    })
+
+    plugin.onMessage('component-render-stats', (stats: ComponentRenderStats[]) => {
+      setComponentRenderStats(stats)
+    })
+
     // Request arch info and startup timing on connect
     plugin.send('request-arch-info', {} as Record<string, never>)
     plugin.send('request-startup-timing', {} as Record<string, never>)
@@ -324,6 +391,7 @@ export default function Panel() {
     setFrameTimes([])
     setAlerts([])
     setFpsData([])
+    setComponentRenderStats([])
     prevStutterCount.current = 0
     prevSnapshotTs.current = 0
   }, [plugin])
@@ -340,6 +408,7 @@ export default function Panel() {
     setFrameTimes([])
     setAlerts([])
     setFpsData([])
+    setComponentRenderStats([])
     prevStutterCount.current = 0
     prevSnapshotTs.current = 0
   }, [plugin])
@@ -887,6 +956,22 @@ export default function Panel() {
           memoryData={memoryData}
           stutterEvents={stutterEvents}
         />
+      )}
+
+      {/* ==================== AI INSIGHTS TAB ==================== */}
+      {activeTab === 'ai-insights' && (
+        <ErrorBoundary fallback={null}>
+          <AIInsights
+            metrics={metrics}
+            history={history}
+            memoryData={memoryData}
+            stutterEvents={stutterEvents}
+            frameTimes={frameTimes}
+            fpsData={fpsData}
+            componentRenderStats={componentRenderStats}
+            archInfo={archInfo}
+          />
+        </ErrorBoundary>
       )}
     </div>
   )
