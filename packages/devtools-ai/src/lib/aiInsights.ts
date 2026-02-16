@@ -64,10 +64,10 @@ export interface AIAnalysisInput {
   componentStats?: ComponentRenderStats[]
 }
 
-let insightIdCounter = 0
+let heuristicIdCounter = 0
 
-function generateId(): string {
-  return `insight-${++insightIdCounter}`
+function generateHeuristicId(): string {
+  return `heuristic-${++heuristicIdCounter}`
 }
 
 export function analyzePerformance(input: AIAnalysisInput): AIInsight[] {
@@ -122,7 +122,7 @@ export function getMemoryLeakInsight(input: AIAnalysisInput): AIInsight | null {
 
   if (growthRateMBPerMin > 3) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'critical',
       title: 'Memory Leak Detected',
       description: `Memory is growing at ${growthRateMBPerMin.toFixed(1)} MB/min. Over the last ${elapsedMin.toFixed(0)} minutes, RAM increased by ${growthMB.toFixed(1)} MB.`,
@@ -134,7 +134,7 @@ export function getMemoryLeakInsight(input: AIAnalysisInput): AIInsight | null {
 
   if (growthRateMBPerMin > 1) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'warning',
       title: 'Elevated Memory Growth',
       description: `Memory is growing at ${growthRateMBPerMin.toFixed(1)} MB/min. This could indicate a slow memory leak.`,
@@ -156,7 +156,7 @@ export function getThreadBottleneckInsight(input: AIAnalysisInput): AIInsight | 
 
   if (uiFps < 30 && jsFps >= 45) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'critical',
       title: 'UI Thread Bottleneck',
       description: `UI FPS is critically low (${Math.round(uiFps)}) while JS thread is healthy (${Math.round(jsFps)}). The native rendering is blocked.`,
@@ -168,7 +168,7 @@ export function getThreadBottleneckInsight(input: AIAnalysisInput): AIInsight | 
 
   if (uiFps < 45 && jsFps >= 45) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'warning',
       title: 'UI Thread Pressure',
       description: `UI FPS (${Math.round(uiFps)}) is below target while JS thread is normal (${Math.round(jsFps)}).`,
@@ -180,7 +180,7 @@ export function getThreadBottleneckInsight(input: AIAnalysisInput): AIInsight | 
 
   if (jsFps < 30 && uiFps >= 45) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'critical',
       title: 'JS Thread Bottleneck',
       description: `JS FPS is critically low (${Math.round(jsFps)}) while UI thread is healthy (${Math.round(uiFps)}). JavaScript execution is overloaded.`,
@@ -192,7 +192,7 @@ export function getThreadBottleneckInsight(input: AIAnalysisInput): AIInsight | 
 
   if (jsFps < 45 && uiFps >= 45) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'warning',
       title: 'JS Thread Pressure',
       description: `JS FPS (${Math.round(jsFps)}) is below target while UI thread is normal (${Math.round(uiFps)}).`,
@@ -204,7 +204,7 @@ export function getThreadBottleneckInsight(input: AIAnalysisInput): AIInsight | 
 
   if (uiFps < 30 && jsFps < 30) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'critical',
       title: 'Both Threads Overloaded',
       description: `Both UI (${Math.round(uiFps)}) and JS (${Math.round(jsFps)}) threads are critically slow. This indicates severe system-wide performance degradation.`,
@@ -235,7 +235,7 @@ export function getGCPressureInsight(input: AIAnalysisInput): AIInsight | null {
   if (heapOscillation && fpsDropRatio > 0.3) {
     const avgJsFps = recentFps.reduce((a, b) => a + b.jsFps, 0) / recentFps.length
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'warning',
       title: 'GC Pressure Detected',
       description: `JS heap is oscillating significantly (variance: ${heapVariance.toFixed(1)} MB) while JS FPS drops occur ${(fpsDropRatio * 100).toFixed(0)}% of the time. This indicates Garbage Collection pauses.`,
@@ -257,7 +257,7 @@ export function getReRenderInsight(input: AIAnalysisInput): AIInsight | null {
 
   if (renderCount > 100 && lastRenderDurationMs > 16 && jsFps < 50) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'warning',
       title: 'Re-render Storm',
       description: `High render count (${renderCount} renders) with long render durations (${lastRenderDurationMs.toFixed(1)}ms) is causing JS thread pressure.`,
@@ -269,7 +269,7 @@ export function getReRenderInsight(input: AIAnalysisInput): AIInsight | null {
 
   if (renderCount > 200) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'info',
       title: 'High Render Count',
       description: `${renderCount} component renders detected. This is elevated but may be normal during initial load.`,
@@ -291,7 +291,7 @@ export function getEventBlockingInsight(input: AIAnalysisInput): AIInsight | nul
 
   if (maxEventDurationMs > 500) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'critical',
       title: 'Event Handler Blocking',
       description: `Events are taking up to ${maxEventDurationMs.toFixed(0)}ms to process (target: <100ms). ${slowEventCount} slow events detected.`,
@@ -303,7 +303,7 @@ export function getEventBlockingInsight(input: AIAnalysisInput): AIInsight | nul
 
   if (maxEventDurationMs > 200 || slowEventCount > 5) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'warning',
       title: 'Slow Event Processing',
       description: `Events are taking ${maxEventDurationMs.toFixed(0)}ms on average (target: <100ms). ${slowEventCount} slow events detected.`,
@@ -327,7 +327,7 @@ export function getFrameBudgetInsight(input: AIAnalysisInput): AIInsight | null 
 
   if (overBudgetRatio > 0.5) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'critical',
       title: 'Frame Budget Violations',
       description: `${(overBudgetRatio * 100).toFixed(0)}% of frames are exceeding the 16.67ms budget. Average frame time: ${(recent.reduce((a, b) => a + b.frameTimeMs, 0) / recent.length).toFixed(1)}ms.`,
@@ -339,7 +339,7 @@ export function getFrameBudgetInsight(input: AIAnalysisInput): AIInsight | null 
 
   if (overBudgetRatio > 0.25) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'warning',
       title: 'Frequent Frame Drops',
       description: `${(overBudgetRatio * 100).toFixed(0)}% of frames are exceeding the 16.67ms budget.`,
@@ -367,7 +367,7 @@ export function getThreadDivergenceInsight(input: AIAnalysisInput): AIInsight | 
   if (divergenceRatio > 0.3 && divergence > 15) {
     const isUiSlow = avgUi < avgJs
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'warning',
       title: 'Thread Divergence',
       description: `UI thread (${avgUi.toFixed(0)} FPS) and JS thread (${avgJs.toFixed(0)} FPS) are diverging by ${divergence.toFixed(0)} FPS. ${isUiSlow ? 'UI thread is the bottleneck.' : 'JS thread is the bottleneck.'}`,
@@ -397,7 +397,7 @@ export function getComponentHotspotInsight(input: AIAnalysisInput): AIInsight | 
 
   if (worst.avgDurationMs > 16) {
     return {
-      id: generateId(),
+      id: generateHeuristicId(),
       severity: 'critical',
       title: 'Component Render Hotspot',
       description: `"${worst.componentId}" has rendered ${worst.renderCount} times with an average duration of ${worst.avgDurationMs.toFixed(1)}ms (max: ${worst.maxDurationMs.toFixed(1)}ms). This exceeds the 16.67ms frame budget.${hotComponents.length > 1 ? ` ${hotComponents.length - 1} other component(s) also show high render activity.` : ''}`,
@@ -408,7 +408,7 @@ export function getComponentHotspotInsight(input: AIAnalysisInput): AIInsight | 
   }
 
   return {
-    id: generateId(),
+    id: generateHeuristicId(),
     severity: 'warning',
     title: 'Frequent Component Re-renders',
     description: `"${worst.componentId}" has rendered ${worst.renderCount} times (avg: ${worst.avgDurationMs.toFixed(1)}ms, max: ${worst.maxDurationMs.toFixed(1)}ms).${hotComponents.length > 1 ? ` ${hotComponents.length} components show elevated render activity.` : ''}`,
