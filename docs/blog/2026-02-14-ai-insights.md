@@ -1,7 +1,6 @@
 ---
 slug: ai-insights
 title: "AI Insights: LLM-Powered Performance Analysis"
-authors: [nitroperf]
 tags: [feature, ai, devtools]
 ---
 

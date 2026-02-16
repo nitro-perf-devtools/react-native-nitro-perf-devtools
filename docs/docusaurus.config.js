@@ -34,7 +34,7 @@ const config = {
         blog: {
           showReadingTime: true,
           onInlineAuthors: 'ignore',
-          authorsMapPath: 'authors.yml',
+          authorsMapPath: './authors.yml',
           editUrl: 'https://github.com/nitro-perf-devtools/react-native-nitro-perf-devtools/tree/main/docs/',
         },
         theme: {
