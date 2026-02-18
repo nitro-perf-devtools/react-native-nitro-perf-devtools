@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { analyzePerformance, analyzeWithClaude, analyzeWithOpenAICompatible, analyzeWithGemini } from '@nitroperf/devtools-ai'
+import { analyzePerformance, analyzeWithClaude, analyzeWithOpenAICompatible, analyzeWithGemini } from '@nitro-perf-devtools/ai'
 
 interface PerfSnapshot {
   uiFps: number

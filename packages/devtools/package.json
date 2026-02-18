@@ -1,7 +1,7 @@
 {
-  "name": "@nitroperf/devtools",
+  "name": "@nitro-perf-devtools/rozenite",
   "version": "0.1.0",
-  "description": "Rozenite DevTools plugin for @nitroperf/core — rich performance charts in your browser",
+  "description": "Rozenite DevTools plugin for NitroPerf — rich performance charts in your browser",
   "main": "src/index.ts",
   "files": [
     "src",
@@ -35,7 +35,7 @@
     "typescript": "^5.3.0"
   },
   "peerDependencies": {
-    "@nitroperf/core": "*",
+    "@nitro-perf-devtools/core": "*",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   }

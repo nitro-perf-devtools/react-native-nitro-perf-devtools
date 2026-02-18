@@ -13,13 +13,13 @@
     "sourceMap": true,
     "outDir": "lib",
     "paths": {
-      "@nitroperf/core": [
+      "@nitro-perf-devtools/core": [
         "./packages/core/src"
       ],
-      "@nitroperf/devtools": [
+      "@nitro-perf-devtools/rozenite": [
         "./packages/devtools/src"
       ],
-      "@nitroperf/devtools-ai": [
+      "@nitro-perf-devtools/ai": [
         "./packages/devtools-ai/src"
       ]
     }

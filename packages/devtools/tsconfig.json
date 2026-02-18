@@ -11,8 +11,9 @@
     "declaration": true,
     "outDir": "lib",
     "paths": {
-      "@nitroperf/core": ["../core/src"],
-      "@nitroperf/devtools-ai": ["../devtools-ai/src"]
+      "@nitro-perf-devtools/core": ["../core/src"],
+      "@nitro-perf-devtools/ai": ["../devtools-ai/src"],
+      "@nitro-perf-devtools/rozenite": ["./src"]
     }
   },
   "include": ["src/**/*", "react-native.ts", "rozenite.config.ts"]

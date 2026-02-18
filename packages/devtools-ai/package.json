@@ -1,7 +1,7 @@
 {
-  "name": "@nitroperf/devtools-ai",
+  "name": "@nitro-perf-devtools/ai",
   "version": "0.1.0",
-  "description": "AI-powered insights for Nitro Perf DevTools — root cause analysis and performance recommendations",
+  "description": "AI-powered insights for NitroPerf DevTools — root cause analysis and performance recommendations",
   "main": "src/index.ts",
   "files": [
     "src",
@@ -20,6 +20,6 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@nitroperf/devtools": ">=0.1.0"
+    "@nitro-perf-devtools/rozenite": ">=0.1.0"
   }
 }
